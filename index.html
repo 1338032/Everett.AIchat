@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>谢蔚安</title>
+<title>Everett chat</title>
 <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+Screen&family=Noto+Serif+SC:wght@400;500&display=swap" rel="stylesheet">
 <script>
 // 同步读取主题，避免闪烁
@@ -336,6 +336,9 @@ a { color:inherit; text-decoration:none; }
   display:flex; align-items:flex-start; gap:10px;
   margin-bottom:20px;
   animation: msgIn 300ms ease-out both;
+  min-width:0;
+  overflow:visible;
+  width:100%;
 }
 @keyframes msgIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
 .msg-block.same-sender { margin-bottom:10px; }
@@ -355,14 +358,21 @@ a { color:inherit; text-decoration:none; }
 .char-content {
   display:flex; flex-direction:column; gap:6px;
   max-width:calc(100% - 42px);
+  min-width:40px;
+  flex:1 1 0%;
+  overflow:hidden;
 }
 .char-action {
   font-size:14px; line-height:1.75;
   color:var(--text-action); font-style:italic;
   padding:0 2px;
+  white-space:normal;
+  overflow-wrap:break-word;
+  min-width:2em;
 }
 .char-bubble {
-  display:inline-block; max-width:100%;
+  display:block; max-width:100%;
+  min-width:2em;
   padding:12px 16px;
   background:var(--bubble-char);
   border:1px solid var(--bubble-char-bd);
@@ -371,15 +381,21 @@ a { color:inherit; text-decoration:none; }
   font-size:var(--font-size); line-height:var(--line-height);
   letter-spacing:0.04em; color:var(--text-primary);
   word-break:break-word;
+  white-space:normal;
+  overflow-wrap:break-word;
 }
 
 /* User 内容 */
 .user-content {
   display:flex; flex-direction:column; align-items:flex-end;
   max-width:calc(100% - 42px);
+  min-width:40px;
+  flex:1 1 0%;
+  overflow:hidden;
 }
 .user-bubble {
-  display:inline-block; max-width:100%;
+  display:block; max-width:100%;
+  min-width:2em;
   padding:12px 16px;
   background:var(--bubble-user);
   border:1px solid var(--bubble-user-bd);
@@ -387,6 +403,8 @@ a { color:inherit; text-decoration:none; }
   font-size:var(--font-size); line-height:var(--line-height);
   letter-spacing:0.04em; color:var(--text-primary);
   word-break:break-word;
+  white-space:normal;
+  overflow-wrap:break-word;
 }
 .emoji-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
 .emoji-row img { max-height:72px; max-width:120px; border-radius:6px; object-fit:contain; }
@@ -1023,6 +1041,34 @@ a { color:inherit; text-decoration:none; }
 }
 .preset-chip .preset-del:hover { background:rgba(0,0,0,0.1); }
 .preset-chip .preset-del svg { width:10px; height:10px; stroke:currentColor; stroke-width:2; fill:none; }
+/* 预设管理弹窗列表 */
+.preset-list-item {
+  display:flex; align-items:center; gap:10px;
+  padding:12px 14px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  margin-bottom:8px;
+  background:var(--bg-input);
+  transition:background 150ms;
+  cursor:pointer;
+}
+.preset-list-item:hover { background:var(--bg-hover); }
+.preset-list-item.active { border-color:var(--pine); }
+.preset-list-item .preset-list-name {
+  flex:1; font-size:14px; color:var(--text-primary);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.preset-list-item .preset-list-meta {
+  font-size:11px; color:var(--text-muted);
+  white-space:nowrap; flex-shrink:0;
+}
+.preset-list-item .preset-list-actions {
+  display:flex; gap:2px; flex-shrink:0;
+}
+.preset-list-empty {
+  text-align:center; color:var(--text-muted);
+  font-size:13px; padding:20px 0;
+}
 /* ══════════════════════════════════════════════════════
    消息长按菜单
    ══════════════════════════════════════════════════════ */
@@ -1129,7 +1175,7 @@ a { color:inherit; text-decoration:none; }
   .settings-content { padding:16px; }
 }
 @media (max-width:480px) {
-  .char-bubble, .user-bubble { max-width:90%; }
+  .char-bubble, .user-bubble { max-width:100%; min-width:40px; }
   .status-grid { gap:4px 8px; }
   .settings-layout { flex-direction:column; }
   .settings-nav {
@@ -1144,6 +1190,364 @@ a { color:inherit; text-decoration:none; }
   .settings-nav-btn.active { border-left-color:transparent; border-bottom-color:var(--pine); }
   #char-modal .modal-panel { max-width:100%; }
 }
+/* ══════════════════════════════════════════════════════
+   收藏夹
+   ══════════════════════════════════════════════════════ */
+.fav-search-wrap {
+  margin-bottom:14px;
+}
+.fav-search-input {
+  width:100%; padding:9px 12px 9px 34px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--bg-input);
+  font-size:14px; line-height:1.6;
+  font-family:var(--font-family);
+  color:var(--text-primary);
+  transition:border-color 150ms, box-shadow 150ms;
+}
+.fav-search-input:focus {
+  outline:none;
+  border-color:var(--pine-ring);
+  box-shadow:0 0 0 3px var(--pine-ring);
+}
+.fav-search-input::placeholder { color:var(--text-muted); }
+.fav-search-wrap {
+  position:relative;
+}
+.fav-search-wrap svg {
+  position:absolute; left:10px; top:50%; transform:translateY(-50%);
+  width:16px; height:16px; stroke:var(--text-muted); stroke-width:1.5; fill:none;
+  pointer-events:none;
+}
+.fav-card {
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--bg-input);
+  padding:12px 14px 10px;
+  margin-bottom:10px;
+  transition:background 150ms;
+}
+.fav-card:hover { background:var(--bg-hover); }
+.fav-card-body {
+  font-size:14px; line-height:1.75;
+  color:var(--text-primary);
+  word-break:break-word;
+  margin-bottom:8px;
+  max-height:120px;
+  overflow:hidden;
+  position:relative;
+}
+.fav-card-body.clamped::after {
+  content:'';
+  position:absolute; bottom:0; left:0; right:0;
+  height:28px;
+  background:linear-gradient(transparent, var(--bg-input));
+  pointer-events:none;
+}
+.fav-card-footer {
+  display:flex; align-items:center; justify-content:space-between;
+}
+.fav-card-time {
+  font-size:11px; color:var(--text-muted);
+  font-family:system-ui, -apple-system, sans-serif;
+}
+.fav-card-actions {
+  display:flex; gap:4px;
+}
+.fav-card-actions .btn-icon-sm svg {
+  width:14px; height:14px;
+}
+.fav-empty {
+  text-align:center; color:var(--text-muted);
+  font-size:14px; padding:30px 0;
+}
+
+/* ══════════════════════════════════════════════════════
+   聊天记录搜索
+   ══════════════════════════════════════════════════════ */
+.search-result-item {
+  display:flex; align-items:flex-start; gap:10px;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--bg-input);
+  margin-bottom:8px;
+  cursor:pointer;
+  transition:background 150ms;
+}
+.search-result-item:hover { background:var(--bg-hover); }
+.search-result-role {
+  font-size:12px; color:var(--pine);
+  font-weight:500;
+  white-space:nowrap;
+  flex-shrink:0;
+  min-width:40px;
+}
+.search-result-role.user-role { color:var(--text-secondary); }
+.search-result-text {
+  font-size:13px; color:var(--text-secondary);
+  line-height:1.6;
+  word-break:break-word;
+  overflow:hidden;
+  display:-webkit-box;
+  -webkit-line-clamp:3;
+  -webkit-box-orient:vertical;
+}
+.search-result-text mark {
+  background:var(--pine-pale);
+  color:var(--text-primary);
+  padding:0 2px;
+  border-radius:2px;
+}
+.search-result-time {
+  font-size:11px; color:var(--text-muted);
+  white-space:nowrap;
+  flex-shrink:0;
+  margin-left:auto;
+  align-self:flex-end;
+}
+.search-empty {
+  text-align:center; color:var(--text-muted);
+  font-size:14px; padding:30px 0;
+}
+.search-hint {
+  text-align:center; color:var(--text-muted);
+  font-size:13px; padding:20px 0;
+}
+
+/* ══════════════════════════════════════════════════════
+   备注名
+   ══════════════════════════════════════════════════════ */
+.remark-group {
+  margin-bottom:18px;
+  padding-bottom:14px;
+  border-bottom:1px dashed var(--border);
+}
+.remark-hint {
+  font-size:12px; color:var(--text-muted);
+  margin-top:4px;
+  line-height:1.5;
+}
+
+/* 消息高亮定位 */
+.msg-block.highlight-locate {
+  animation: highlightPulse 1.5s ease-out;
+}
+@keyframes highlightPulse {
+  0% { background:var(--pine-pale); }
+  100% { background:transparent; }
+}
+/* ══════════════════════════════════════════════════════
+   书库全屏面板
+   ══════════════════════════════════════════════════════ */
+#bookshelf-modal .modal-panel {
+  position:fixed; inset:0;
+  background:var(--bg-overlay);
+  display:flex; flex-direction:column;
+  transform:scale(0.97); opacity:0;
+  transition:transform 250ms ease-out, opacity 250ms ease-out;
+}
+#bookshelf-modal.open .modal-panel { transform:scale(1); opacity:1; }
+
+.book-list { padding:0; }
+.book-item {
+  display:flex; align-items:center; gap:12px;
+  padding:14px 16px;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;
+  transition:background 150ms;
+}
+.book-item:hover { background:var(--bg-hover); }
+.book-item-icon {
+  width:36px; height:44px; border-radius:4px;
+  background:var(--pine-pale);
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.book-item-icon svg {
+  width:20px; height:20px; stroke:var(--pine); stroke-width:1.5; fill:none;
+}
+.book-item-info { flex:1; min-width:0; }
+.book-item-title {
+  font-size:15px; color:var(--text-primary);
+  font-weight:500;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.book-item-meta {
+  font-size:12px; color:var(--text-muted);
+  margin-top:2px;
+}
+.book-item-actions { display:flex; gap:4px; flex-shrink:0; }
+.book-empty {
+  text-align:center; color:var(--text-muted);
+  font-size:14px; padding:40px 0;
+}
+
+/* ══════════════════════════════════════════════════════
+   阅读浮窗
+   ══════════════════════════════════════════════════════ */
+#reader-float {
+  position:fixed;
+  bottom:70px; left:8px; right:8px;
+  max-width:680px; margin:0 auto;
+  z-index:95;
+  background:var(--bg-overlay);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  box-shadow:var(--shadow-md);
+  display:none;
+  flex-direction:column;
+  max-height:55vh;
+  min-height:200px;
+  transition:transform 250ms ease, opacity 250ms ease;
+  overflow:hidden;
+}
+#reader-float.open { display:flex; }
+#reader-float.zoomed {
+  top:56px; bottom:0; left:0; right:0;
+  max-width:100%; max-height:100%;
+  border-radius:0;
+  z-index:140;
+}
+#reader-float.mini {
+  max-height:none;
+  min-height:0;
+  width:280px;
+  height:220px;
+  left:auto;
+  right:8px;
+  bottom:70px;
+  resize:none;
+}
+#reader-float.mini .reader-body {
+  flex:1;
+  overflow-y:auto;
+  padding:10px 12px;
+  font-size:13px;
+}
+#reader-float.mini .reader-footer {
+  padding:4px 8px;
+}
+#reader-float.mini .reader-footer .reader-page-jump {
+  display:none;
+}
+#reader-float.mini .reader-nav-btn {
+  padding:4px 10px;
+  font-size:12px;
+}
+#reader-float.mini .reader-settings-panel {
+  display:none !important;
+}
+#reader-float.mini .reader-header {
+  padding:6px 10px;
+  min-height:0;
+  height:auto;
+}
+#reader-float.mini .reader-title {
+  font-size:12px;
+}
+#reader-float.mini .reader-page-info {
+  font-size:11px;
+}
+#reader-float.dragging {
+  transition:none !important;
+  user-select:none;
+}
+.reader-header {
+  display:flex; align-items:center; gap:8px;
+  padding:10px 14px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+  background:var(--bg-surface);
+}
+.reader-header.has-radius {
+  border-top-left-radius:var(--radius-md);
+  border-top-right-radius:var(--radius-md);
+}
+.reader-title {
+  flex:1; font-size:14px; font-weight:500;
+  color:var(--text-primary);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.reader-page-info {
+  font-size:12px; color:var(--text-muted);
+  white-space:nowrap; flex-shrink:0;
+}
+.reader-header-actions { display:flex; gap:2px; flex-shrink:0; }
+
+.reader-body {
+  flex:1; overflow-y:auto;
+  padding:16px 18px;
+  font-size:var(--font-size);
+  line-height:var(--line-height);
+  color:var(--text-primary);
+  letter-spacing:0.04em;
+  word-break:break-word;
+  white-space:pre-wrap;
+}
+.reader-body.custom-style {
+  transition:font-size 150ms, letter-spacing 150ms, line-height 150ms;
+}
+
+.reader-footer {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 14px;
+  border-top:1px solid var(--border);
+  flex-shrink:0;
+  background:var(--bg-surface);
+}
+.reader-footer.has-radius {
+  border-bottom-left-radius:var(--radius-md);
+  border-bottom-right-radius:var(--radius-md);
+}
+.reader-nav-btn {
+  padding:6px 14px; border-radius:var(--radius-sm);
+  font-size:13px; color:var(--text-secondary);
+  border:1px solid var(--border);
+  background:var(--bg-surface);
+  transition:background 150ms;
+}
+.reader-nav-btn:hover { background:var(--bg-hover); }
+.reader-nav-btn:disabled { opacity:0.4; cursor:default; }
+.reader-nav-btn:disabled:hover { background:var(--bg-surface); }
+.reader-page-jump {
+  display:flex; align-items:center; gap:6px;
+  font-size:13px; color:var(--text-muted);
+}
+.reader-page-jump input {
+  width:50px; padding:4px 6px; text-align:center;
+  border:1px solid var(--border);
+  border-radius:var(--radius-xs);
+  background:var(--bg-input);
+  font-size:13px; color:var(--text-primary);
+  font-family:system-ui;
+}
+
+/* 阅读设置弹窗 */
+.reader-settings-panel {
+  position:absolute; top:50px; right:14px;
+  width:220px; z-index:10;
+  background:var(--bg-overlay);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  box-shadow:var(--shadow-md);
+  padding:14px;
+  display:none;
+}
+.reader-settings-panel.open { display:block; }
+.reader-settings-panel .form-group { margin-bottom:12px; }
+.reader-settings-panel .form-label { font-size:12px; margin-bottom:4px; }
+
+/* 书库上传弹窗 */
+.book-upload-dialog {
+  background:var(--bg-overlay);
+  border-radius:var(--radius-md);
+  padding:24px; max-width:380px; width:90%;
+  box-shadow:var(--shadow-md);
+  transform:scale(0.97); transition:transform 250ms ease-out;
+}
+.modal-overlay.open .book-upload-dialog { transform:scale(1); }
 </style>
 </head>
 <body>
@@ -1167,12 +1571,60 @@ a { color:inherit; text-decoration:none; }
 <div id="toast-container"></div>
 
 <!-- 确认弹窗 -->
-<div id="confirm-modal" class="modal-overlay">
+<div id="confirm-modal" class="modal-overlay" style="z-index:300">
   <div class="confirm-dialog">
     <p id="confirm-text"></p>
     <div class="btn-row">
       <button class="btn-cancel" id="confirm-cancel">取消</button>
       <button class="btn-confirm" id="confirm-ok">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- 输入弹窗（替代 prompt） -->
+<div id="prompt-modal" class="modal-overlay" style="z-index:310">
+  <div class="confirm-dialog" style="text-align:left">
+    <h3 id="prompt-title" style="font:500 16px/1 'Noto Serif SC',serif;margin-bottom:14px;text-align:center"></h3>
+    <p id="prompt-desc" style="font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.6;display:none"></p>
+    <div id="prompt-input-wrap" class="form-group" style="margin-bottom:16px">
+      <input class="form-input" id="prompt-input" placeholder="">
+    </div>
+    <div id="prompt-textarea-wrap" class="form-group" style="margin-bottom:16px;display:none">
+      <textarea class="form-textarea" id="prompt-textarea" style="min-height:80px"></textarea>
+    </div>
+    <div class="btn-row" style="justify-content:flex-end">
+      <button class="btn-cancel" id="prompt-cancel">取消</button>
+      <button class="btn-confirm" id="prompt-ok">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- 预览弹窗（替代 alert） -->
+<div id="alert-modal" class="modal-overlay" style="z-index:310">
+  <div class="confirm-dialog">
+    <h3 id="alert-title" style="font:500 16px/1 'Noto Serif SC',serif;margin-bottom:14px">提示</h3>
+    <div id="alert-content" style="font-size:14px;color:var(--text-secondary);line-height:1.75;margin-bottom:20px;text-align:left;max-height:50vh;overflow-y:auto;white-space:pre-wrap;word-break:break-word"></div>
+    <div class="btn-row">
+      <button class="btn-confirm" id="alert-ok">知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- 预设管理弹窗 -->
+<div id="preset-modal" class="modal-overlay" style="z-index:250">
+  <div class="confirm-dialog" style="text-align:left;max-width:420px;width:92%">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 id="preset-modal-title" style="font:500 16px/1 'Noto Serif SC',serif">预设管理</h3>
+      <button class="panel-close" id="preset-modal-close" style="width:28px;height:28px">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div id="preset-modal-list" style="max-height:50vh;overflow-y:auto"></div>
+    <div style="margin-top:14px;text-align:right">
+      <button class="btn-primary" id="preset-modal-add">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;stroke-width:2;fill:none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        保存当前配置
+      </button>
     </div>
   </div>
 </div>
@@ -1274,7 +1726,10 @@ a { color:inherit; text-decoration:none; }
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         <span>发图片</span>
       </div>
-      <div class="func-cell empty"><span></span></div>
+      <div class="func-cell" data-func="read-together">
+        <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <span>共读书</span>
+      </div>
       <div class="func-cell empty"><span></span></div>
       <div class="func-cell empty"><span></span></div>
       <div class="func-cell empty"><span></span></div>
@@ -1311,6 +1766,11 @@ a { color:inherit; text-decoration:none; }
           </div>
           <input type="file" accept="image/*" id="char-avatar-file" style="display:none">
         </div>
+        <div class="form-group remark-group">
+          <label class="form-label">角色备注名</label>
+          <input class="form-input" id="char-remark-input" placeholder="给角色起个备注名（显示在顶栏）">
+          <span class="remark-hint">备注名会代替顶栏显示的角色名，角色会用此名称称呼自己对外的称呼</span>
+        </div>
         <div class="form-group">
           <label class="form-label">角色名</label>
           <input class="form-input" id="char-name-input" placeholder="谢蔚安">
@@ -1340,6 +1800,11 @@ a { color:inherit; text-decoration:none; }
             <button class="btn-small" id="btn-user-avatar-clear">清除头像</button>
           </div>
           <input type="file" accept="image/*" id="user-avatar-file" style="display:none">
+        </div>
+        <div class="form-group remark-group">
+          <label class="form-label">用户备注名</label>
+          <input class="form-input" id="user-remark-input" placeholder="角色对你的称呼">
+          <span class="remark-hint">角色在聊天中会用这个备注名称呼你</span>
         </div>
         <div class="form-group">
           <label class="form-label">用户名</label>
@@ -1375,6 +1840,102 @@ a { color:inherit; text-decoration:none; }
   </div>
 </div>
 
+<!-- 书库弹窗 -->
+<div id="bookshelf-modal" class="modal-overlay">
+  <div class="modal-panel">
+    <div class="panel-header">
+      <h2>书库</h2>
+      <div style="display:flex;gap:6px">
+        <button class="icon-btn" id="btn-book-add" title="上传书籍">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button class="panel-close" id="bookshelf-close">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:0">
+      <div class="book-list" id="book-list"></div>
+      <div class="book-empty" id="book-empty">还没有书籍，点击右上角 + 上传 TXT 文件</div>
+    </div>
+  </div>
+</div>
+<input type="file" accept=".txt" id="book-file-input" style="display:none">
+
+<!-- 书籍上传命名弹窗 -->
+<div id="book-upload-modal" class="modal-overlay">
+  <div class="book-upload-dialog">
+    <h3 style="font:500 16px/1 'Noto Serif SC',serif;margin-bottom:16px">添加书籍</h3>
+    <div class="form-group">
+      <label class="form-label">书名</label>
+      <input class="form-input" id="book-upload-name" placeholder="给书籍起个名字">
+    </div>
+    <div class="form-group">
+      <label class="form-label">文件</label>
+      <span id="book-upload-filename" style="font-size:13px;color:var(--text-muted)">未选择</span>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn-secondary" id="book-upload-cancel">取消</button>
+      <button class="btn-primary" id="book-upload-confirm">添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- 阅读浮窗 -->
+<div id="reader-float">
+  <div class="reader-header has-radius" style="position:relative">
+    <span class="reader-title" id="reader-title">—</span>
+    <span class="reader-page-info" id="reader-page-info">0/0</span>
+    <div class="reader-header-actions">
+      <button class="btn-icon-sm" id="reader-btn-settings" title="阅读设置">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <button class="btn-icon-sm" id="reader-btn-zoom" title="放大/缩小">
+        <svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+      </button>
+      <button class="btn-icon-sm" id="reader-btn-close" title="关闭">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="reader-settings-panel" id="reader-settings-panel">
+      <div class="form-group">
+        <label class="form-label">每页字数</label>
+        <input class="form-input" type="number" id="reader-chars-per-page" min="100" max="5000" value="800" style="width:100%">
+      </div>
+      <div class="form-group">
+        <label class="form-label">字体大小</label>
+        <div class="range-row">
+          <input type="range" id="reader-font-size" min="12" max="24" step="1" value="16">
+          <span class="range-val" id="reader-font-size-val">16</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">字间距</label>
+        <div class="range-row">
+          <input type="range" id="reader-letter-spacing" min="0" max="0.3" step="0.01" value="0.06">
+          <span class="range-val" id="reader-letter-spacing-val">0.06</span>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">行距</label>
+        <div class="range-row">
+          <input type="range" id="reader-line-height" min="1.4" max="2.8" step="0.1" value="1.9">
+          <span class="range-val" id="reader-line-height-val">1.9</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="reader-body custom-style" id="reader-body"></div>
+  <div class="reader-footer has-radius">
+    <button class="reader-nav-btn" id="reader-prev">上一页</button>
+    <div class="reader-page-jump">
+      <input type="number" id="reader-jump-page" min="1" value="1">
+      <button class="btn-small" id="reader-jump-go">跳转</button>
+    </div>
+    <button class="reader-nav-btn" id="reader-next">下一页</button>
+  </div>
+</div>
+
 <!-- 全屏设置弹窗 -->
 <div id="settings-modal" class="modal-overlay">
   <div class="modal-panel">
@@ -1391,6 +1952,8 @@ a { color:inherit; text-decoration:none; }
         <button class="settings-nav-btn" data-pane="page">页面设置</button>
         <button class="settings-nav-btn" data-pane="emojis">表情包</button>
         <button class="settings-nav-btn" data-pane="memory">记忆区</button>
+        <button class="settings-nav-btn" data-pane="favorites">收藏夹</button>
+        <button class="settings-nav-btn" data-pane="search">聊天记录</button>
       </nav>
       <div class="settings-content">
         <!-- 数据管理 -->
@@ -1410,6 +1973,11 @@ a { color:inherit; text-decoration:none; }
             </div>
           </div>
           <div class="settings-section">
+            <h3>清空对话记录</h3>
+            <p class="desc">删除所有对话消息，但保留角色设定、记忆、世界书等配置</p>
+            <button class="btn-primary" id="btn-clear-messages" style="background:var(--warning-color)">清空对话</button>
+          </div>
+          <div class="settings-section">
             <h3>导出数据</h3>
             <p class="desc">下载包含所有对话和设置的 JSON 备份文件</p>
             <button class="btn-primary" id="btn-export">导出</button>
@@ -1423,11 +1991,10 @@ a { color:inherit; text-decoration:none; }
         </div>
         <!-- API 设置 -->
         <div class="settings-pane" id="sp-api">
-          <div class="preset-bar" id="api-preset-bar">
-            <span style="font-size:13px;color:var(--text-muted);margin-right:4px">预设：</span>
-            <button class="preset-chip" id="btn-save-api-preset" style="border-style:dashed">
-              <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              保存当前
+          <div style="margin-bottom:16px">
+            <button class="btn-secondary" id="btn-manage-api-presets" style="font-size:13px">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--text-secondary);stroke-width:1.5;fill:none;margin-right:2px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              管理 API 预设
             </button>
           </div>
           <div class="form-group">
@@ -1648,6 +2215,24 @@ a { color:inherit; text-decoration:none; }
             <div class="short-term-preview" id="short-term-preview" style="display:none"></div>
           </div>
         </div>
+        <!-- 收藏夹 -->
+        <div class="settings-pane" id="sp-favorites">
+          <div class="fav-search-wrap">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="fav-search-input" id="fav-search-input" placeholder="搜索收藏内容...">
+          </div>
+          <div id="fav-list"></div>
+          <div id="fav-empty" class="fav-empty">还没有收藏的消息</div>
+        </div>
+        <!-- 聊天记录 -->
+        <div class="settings-pane" id="sp-search">
+          <div class="fav-search-wrap">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="fav-search-input" id="chat-search-input" placeholder="输入关键词搜索聊天记录...">
+          </div>
+          <div id="chat-search-results"></div>
+          <div id="chat-search-hint" class="search-hint">输入关键词开始搜索</div>
+        </div>
       </div>
     </div>
   </div>
@@ -1776,7 +2361,7 @@ class XWADatabase {
   async open() {
     if (this._db) return;
     return new Promise((resolve, reject) => {
-      const req = indexedDB.open('xwa_db', 1);
+      const req = indexedDB.open('xwa_db', 3);
       req.onupgradeneeded = (e) => {
         const d = e.target.result;
         if (!d.objectStoreNames.contains('messages')) {
@@ -1799,6 +2384,14 @@ class XWADatabase {
         if (!d.objectStoreNames.contains('emojis')) {
           const em = d.createObjectStore('emojis', { keyPath: 'id' });
           em.createIndex('by_created', 'createdAt', { unique: false });
+        }
+       if (!d.objectStoreNames.contains('favorites')) {
+          const fv = d.createObjectStore('favorites', { keyPath: 'id' });
+          fv.createIndex('by_created', 'createdAt', { unique: false });
+        }
+        if (!d.objectStoreNames.contains('books')) {
+          var bk = d.createObjectStore('books', { keyPath: 'id' });
+          bk.createIndex('by_created', 'createdAt', { unique: false });
         }
         if (!d.objectStoreNames.contains('blobs')) {
           d.createObjectStore('blobs', { keyPath: 'key' });
@@ -2036,6 +2629,51 @@ class XWADatabase {
   async saveWorldBookFolders(folders) {
     await this.setSetting('wb_folders', folders);
   }
+  // ── 收藏 ──
+  async getFavorites() {
+    return new Promise((resolve, reject) => {
+      const store = this._store('favorites', 'readonly');
+      const idx = store.index('by_created');
+      const req = idx.getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async addFavorite(entry) {
+    await this._req(this._store('favorites', 'readwrite').put(entry));
+  }
+
+  async deleteFavorite(id) {
+    await this._req(this._store('favorites', 'readwrite').delete(id));
+  }
+    // ── 书籍 ──
+  async getBooks() {
+    return new Promise((resolve, reject) => {
+      const store = this._store('books', 'readonly');
+      const idx = store.index('by_created');
+      const req = idx.getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async addBook(entry) {
+    await this._req(this._store('books', 'readwrite').put(entry));
+  }
+
+  async updateBook(id, partial) {
+    const store = this._store('books', 'readwrite');
+    const existing = await this._req(store.get(id));
+    if (!existing) return;
+    Object.assign(existing, partial);
+    await this._req(store.put(existing));
+  }
+
+  async deleteBook(id) {
+    await this._req(this._store('books', 'readwrite').delete(id));
+  }
+  
   // ── 表情包 ──
   async getEmojis() {
     return new Promise((resolve, reject) => {
@@ -2130,6 +2768,8 @@ class XWADatabase {
       worldbook: await this.getWorldBook(),
       wb_folders: await this.getWorldBookFolders(),
       emojis: await this.getEmojis(),
+      favorites: await this.getFavorites(),
+      books: await this.getBooks(),
       settings: await this.getAllSettings(),
       blobs: {}
     };
@@ -2178,6 +2818,18 @@ data.blobs[key] = { base64: b64, mimeType: row.mimeType };
     if (data.wb_folders) {
       await this.saveWorldBookFolders(data.wb_folders);
     }
+    if (data.books) {
+      const tx = this._tx('books', 'readwrite');
+      const store = tx.objectStore('books');
+      for (const e of data.books) store.put(e);
+      await this._txComplete(tx);
+    }
+    if (data.favorites) {
+      const tx = this._tx('favorites', 'readwrite');
+      const store = tx.objectStore('favorites');
+      for (const e of data.favorites) store.put(e);
+      await this._txComplete(tx);
+    }
     if (data.emojis) {
       const tx = this._tx('emojis', 'readwrite');
       const store = tx.objectStore('emojis');
@@ -2207,7 +2859,7 @@ data.blobs[key] = { base64: b64, mimeType: row.mimeType };
 
   async clearAll() {
     this.revokeAll();
-    const stores = ['messages', 'memory_lt', 'memory_core', 'worldbook', 'emojis', 'blobs', 'kv'];
+    const stores = ['messages', 'memory_lt', 'memory_core', 'worldbook', 'emojis', 'favorites', 'books', 'blobs', 'kv'];
     for (const name of stores) {
       await this._req(this._store(name, 'readwrite').clear());
     }
@@ -2253,6 +2905,17 @@ const state = {
   worldBook: [],
   worldBookFolders: [],
   emojis: [],
+  favorites: [],
+  books: [],
+  readerState: {
+    currentBookId: null,
+    currentPage: 1,
+    charsPerPage: 800,
+    fontSize: 16,
+    letterSpacing: 0.06,
+    lineHeight: 1.9,
+    zoomed: false
+  },
   charAvatarURL: null,
   userAvatarURL: null,
   isGenerating: false,
@@ -2266,6 +2929,9 @@ const state = {
   apiPresets: [],
   fontPresets: [],
   fetchedModels: [],
+  domWindow: { startIdx: 0, endIdx: 0 },
+  domMaxNodes: 400,
+  isLoadingDom: false,
   multiSelectMode: false,
   selectedMsgIds: new Set()
 };
@@ -2329,6 +2995,82 @@ function showConfirm(text, isDanger = false) {
     document.getElementById('confirm-cancel').addEventListener('click', onCancel);
   });
 }
+function showPrompt(title, defaultValue, options) {
+  var opts = options || {};
+  return new Promise(function(resolve) {
+    var modal = document.getElementById('prompt-modal');
+    document.getElementById('prompt-title').textContent = title;
+    var descEl = document.getElementById('prompt-desc');
+    if (opts.description) {
+      descEl.textContent = opts.description;
+      descEl.style.display = '';
+    } else {
+      descEl.style.display = 'none';
+    }
+    var useTextarea = opts.multiline === true;
+    var inputWrap = document.getElementById('prompt-input-wrap');
+    var textareaWrap = document.getElementById('prompt-textarea-wrap');
+    var inputEl = document.getElementById('prompt-input');
+    var textareaEl = document.getElementById('prompt-textarea');
+    if (useTextarea) {
+      inputWrap.style.display = 'none';
+      textareaWrap.style.display = '';
+      textareaEl.value = defaultValue || '';
+      textareaEl.placeholder = opts.placeholder || '';
+    } else {
+      inputWrap.style.display = '';
+      textareaWrap.style.display = 'none';
+      inputEl.value = defaultValue || '';
+      inputEl.placeholder = opts.placeholder || '';
+    }
+    modal.classList.add('open');
+    setTimeout(function() {
+      if (useTextarea) textareaEl.focus();
+      else inputEl.focus();
+    }, 100);
+    var cleanup = function(result) {
+      modal.classList.remove('open');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      inputEl.removeEventListener('keydown', onKeydown);
+      resolve(result);
+    };
+    var onOk = function() {
+      var val = useTextarea ? textareaEl.value : inputEl.value;
+      cleanup(val);
+    };
+    var onCancel = function() {
+      cleanup(null);
+    };
+    var onKeydown = function(e) {
+      if (e.key === 'Enter' && !useTextarea) {
+        e.preventDefault();
+        onOk();
+      }
+    };
+    var okBtn = document.getElementById('prompt-ok');
+    var cancelBtn = document.getElementById('prompt-cancel');
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    inputEl.addEventListener('keydown', onKeydown);
+  });
+}
+
+function showAlert(title, content) {
+  return new Promise(function(resolve) {
+    var modal = document.getElementById('alert-modal');
+    document.getElementById('alert-title').textContent = title || '提示';
+    document.getElementById('alert-content').textContent = content || '';
+    modal.classList.add('open');
+    var onOk = function() {
+      modal.classList.remove('open');
+      okBtn.removeEventListener('click', onOk);
+      resolve();
+    };
+    var okBtn = document.getElementById('alert-ok');
+    okBtn.addEventListener('click', onOk);
+  });
+}
 
 // ══════════════════════════════════════════════════════
 // AI 输出解析
@@ -2376,6 +3118,14 @@ function getCharName() {
 
 function getUserName() {
   return state.userMeta.name || '用户';
+}
+
+function getCharDisplayName() {
+  return state.charMeta.remark || state.charMeta.name || '谢蔚安';
+}
+
+function getUserDisplayName() {
+  return state.userMeta.remark || state.userMeta.name || '用户';
 }
 
 function getCharAvatarHTML(cls = '') {
@@ -2496,23 +3246,47 @@ function renderMessageElement(msg, prevMsg) {
 }
 
 function renderAllMessages() {
-  const inner = document.getElementById('chat-inner');
+  var inner = document.getElementById('chat-inner');
   inner.innerHTML = '';
 
   if (state.hasMoreMessages) {
-    const loadBtn = document.createElement('button');
+    var loadBtn = document.createElement('button');
     loadBtn.className = 'load-more-btn';
     loadBtn.textContent = '加载更多对话...';
     loadBtn.addEventListener('click', loadMoreMessages);
     inner.appendChild(loadBtn);
   }
 
-  let prevMsg = null;
-  for (const msg of state.messages) {
-    const el = renderMessageElement(msg, prevMsg);
+  var total = state.messages.length;
+  var maxNodes = state.domMaxNodes;
+  var startIdx = Math.max(0, total - maxNodes);
+  var endIdx = total;
+
+  state.domWindow.startIdx = startIdx;
+  state.domWindow.endIdx = endIdx;
+
+  if (startIdx > 0) {
+    var topSentinel = document.createElement('div');
+    topSentinel.id = 'dom-top-sentinel';
+    topSentinel.style.height = '1px';
+    inner.appendChild(topSentinel);
+  }
+
+  var prevMsg = startIdx > 0 ? state.messages[startIdx - 1] : null;
+  for (var i = startIdx; i < endIdx; i++) {
+    var msg = state.messages[i];
+    var el = renderMessageElement(msg, prevMsg);
     inner.appendChild(el);
     prevMsg = msg;
   }
+
+  if (endIdx < total) {
+    var bottomSentinel = document.createElement('div');
+    bottomSentinel.id = 'dom-bottom-sentinel';
+    bottomSentinel.style.height = '1px';
+    inner.appendChild(bottomSentinel);
+  }
+
   scrollToBottom();
 }
 
@@ -2546,7 +3320,147 @@ async function loadMoreMessages() {
     showToast('加载更多消息失败: ' + err.message, 'error');
   }
 }
+function initDomRecycling() {
+  var chatArea = document.getElementById('chat-area');
+  var scrollTimer = null;
 
+  chatArea.addEventListener('scroll', function() {
+    if (scrollTimer) return;
+    scrollTimer = setTimeout(function() {
+      scrollTimer = null;
+      handleDomRecycling();
+    }, 150);
+  });
+}
+
+function handleDomRecycling() {
+  if (state.isLoadingDom) return;
+  var chatArea = document.getElementById('chat-area');
+  var inner = document.getElementById('chat-inner');
+  var total = state.messages.length;
+  var maxNodes = state.domMaxNodes;
+
+  if (total <= maxNodes) return;
+
+  var scrollTop = chatArea.scrollTop;
+  var scrollHeight = chatArea.scrollHeight;
+  var clientHeight = chatArea.clientHeight;
+  var nearTop = scrollTop < 200;
+  var nearBottom = scrollHeight - scrollTop - clientHeight < 200;
+
+  if (nearTop && state.domWindow.startIdx > 0) {
+    state.isLoadingDom = true;
+    var addCount = Math.min(100, state.domWindow.startIdx);
+    var newStart = state.domWindow.startIdx - addCount;
+    var msgBlocks = inner.querySelectorAll('.msg-block');
+    var currentBlockCount = msgBlocks.length;
+    var removeFromBottom = Math.max(0, currentBlockCount + addCount - maxNodes);
+
+    var oldScrollHeight = chatArea.scrollHeight;
+
+    var bottomSentinel = document.getElementById('dom-bottom-sentinel');
+    if (!bottomSentinel && removeFromBottom > 0) {
+      bottomSentinel = document.createElement('div');
+      bottomSentinel.id = 'dom-bottom-sentinel';
+      bottomSentinel.style.height = '1px';
+      inner.appendChild(bottomSentinel);
+    }
+
+    if (removeFromBottom > 0) {
+      var allBlocks = inner.querySelectorAll('.msg-block');
+      for (var r = 0; r < removeFromBottom && allBlocks.length - 1 - r >= 0; r++) {
+        var blockToRemove = allBlocks[allBlocks.length - 1 - r];
+        if (blockToRemove && blockToRemove.parentNode) {
+          blockToRemove.parentNode.removeChild(blockToRemove);
+        }
+      }
+      state.domWindow.endIdx -= removeFromBottom;
+    }
+
+    var topSentinel = document.getElementById('dom-top-sentinel');
+    var insertBefore = topSentinel ? topSentinel.nextSibling : inner.querySelector('.msg-block');
+
+    var fragment = document.createDocumentFragment();
+    var prevMsg = newStart > 0 ? state.messages[newStart - 1] : null;
+    for (var i = newStart; i < state.domWindow.startIdx; i++) {
+      var el = renderMessageElement(state.messages[i], prevMsg);
+      fragment.appendChild(el);
+      prevMsg = state.messages[i];
+    }
+
+    if (insertBefore) {
+      inner.insertBefore(fragment, insertBefore);
+    } else {
+      inner.appendChild(fragment);
+    }
+
+    state.domWindow.startIdx = newStart;
+
+    if (newStart === 0 && topSentinel) {
+      topSentinel.parentNode.removeChild(topSentinel);
+    }
+
+    var newScrollHeight = chatArea.scrollHeight;
+    chatArea.scrollTop = scrollTop + (newScrollHeight - oldScrollHeight);
+
+    state.isLoadingDom = false;
+  }
+
+  if (nearBottom && state.domWindow.endIdx < total) {
+    state.isLoadingDom = true;
+    var addCount2 = Math.min(100, total - state.domWindow.endIdx);
+    var newEnd = state.domWindow.endIdx + addCount2;
+    var msgBlocks2 = inner.querySelectorAll('.msg-block');
+    var currentBlockCount2 = msgBlocks2.length;
+    var removeFromTop = Math.max(0, currentBlockCount2 + addCount2 - maxNodes);
+
+    if (removeFromTop > 0) {
+      var allBlocks2 = inner.querySelectorAll('.msg-block');
+      for (var r2 = 0; r2 < removeFromTop && r2 < allBlocks2.length; r2++) {
+        if (allBlocks2[r2] && allBlocks2[r2].parentNode) {
+          allBlocks2[r2].parentNode.removeChild(allBlocks2[r2]);
+        }
+      }
+      state.domWindow.startIdx += removeFromTop;
+
+      if (!document.getElementById('dom-top-sentinel') && state.domWindow.startIdx > 0) {
+        var ts = document.createElement('div');
+        ts.id = 'dom-top-sentinel';
+        ts.style.height = '1px';
+        var firstBlock = inner.querySelector('.msg-block');
+        if (firstBlock) {
+          inner.insertBefore(ts, firstBlock);
+        } else {
+          inner.appendChild(ts);
+        }
+      }
+    }
+
+    var bottomSentinel2 = document.getElementById('dom-bottom-sentinel');
+    var fragment2 = document.createDocumentFragment();
+    var prevMsg2 = state.domWindow.endIdx > 0 ? state.messages[state.domWindow.endIdx - 1] : null;
+    for (var j = state.domWindow.endIdx; j < newEnd; j++) {
+      var el2 = renderMessageElement(state.messages[j], prevMsg2);
+      fragment2.appendChild(el2);
+      prevMsg2 = state.messages[j];
+    }
+
+    if (bottomSentinel2) {
+      inner.insertBefore(fragment2, bottomSentinel2);
+    } else {
+      inner.appendChild(fragment2);
+    }
+
+    state.domWindow.endIdx = newEnd;
+
+    if (newEnd >= total) {
+      var bs = document.getElementById('dom-bottom-sentinel');
+      if (bs) bs.parentNode.removeChild(bs);
+    }
+
+    state.isLoadingDom = false;
+  }
+}
 function scrollToBottom() {
   const area = document.getElementById('chat-area');
   requestAnimationFrame(() => {
@@ -2710,36 +3624,19 @@ function loadCustomFontCSS(url) {
 }
 
 function renderFontPresets() {
-  const bar = document.getElementById('font-preset-bar');
+  var bar = document.getElementById('font-preset-bar');
   if (!bar) return;
   bar.innerHTML = '';
-  for (const preset of state.fontPresets) {
-    const chip = document.createElement('button');
-    chip.className = 'preset-chip';
-    chip.innerHTML = escapeHtml(preset.name) +
-      '<span class="preset-del" data-fp-id="' + preset.id + '"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>';
-    chip.addEventListener('click', (e) => {
-      if (e.target.closest('.preset-del')) return;
-      state.pageSettings.fontFamily = 'custom';
-      state.pageSettings.customFontUrl = preset.url;
-      state.pageSettings.customFontFamily = preset.fontFamily;
-      document.getElementById('custom-font-url').value = preset.url;
-      document.getElementById('custom-font-name').value = preset.fontFamily;
-      document.querySelectorAll('input[name="fontFamily"]').forEach(r => { r.checked = r.value === 'custom'; });
-      document.getElementById('custom-font-area').style.display = '';
-      applyPageSettings();
-      schedulePageSave();
-      showToast('已应用字体：' + preset.name, 'success');
-    });
-    chip.querySelector('.preset-del').addEventListener('click', async (e) => {
-      e.stopPropagation();
-      state.fontPresets = state.fontPresets.filter(p => p.id !== preset.id);
-      try { await db.setSetting('font_presets', state.fontPresets); } catch (_) {}
-      renderFontPresets();
-      showToast('预设已删除', 'success');
-    });
-    bar.appendChild(chip);
-  }
+  if (state.fontPresets.length === 0) return;
+  var manageBtn = document.createElement('button');
+  manageBtn.className = 'btn-secondary';
+  manageBtn.style.fontSize = '13px';
+  manageBtn.style.marginTop = '8px';
+  manageBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--text-secondary);stroke-width:1.5;fill:none;margin-right:2px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>管理字体预设（' + state.fontPresets.length + '）';
+  manageBtn.addEventListener('click', function() {
+    openFontPresetModal();
+  });
+  bar.appendChild(manageBtn);
 }
 // ══════════════════════════════════════════════════════
 // 输入区 & 按钮状态管理
@@ -2945,6 +3842,18 @@ function buildSystemPrompt() {
     system += `【核心记忆 · 绝不遗忘】\n${coreText}\n\n`;
   }
 
+// [3.5] 备注名称
+  if (state.charMeta.remark || state.userMeta.remark) {
+    system += '【称呼约定】\n';
+    if (state.charMeta.remark) {
+      system += userName + ' 给 ' + charName + ' 起的备注是「' + state.charMeta.remark + '」，在日常聊天中 ' + userName + ' 可能会用这个备注称呼 ' + charName + '。\n';
+    }
+    if (state.userMeta.remark) {
+      system += charName + ' 对 ' + userName + ' 的称呼/备注是「' + state.userMeta.remark + '」，请在对话中使用这个称呼来称呼对方。\n';
+    }
+    system += '\n';
+  }
+
   // [4] User 设定
   if (state.userMeta.description) {
     system += `【关于 ${userName}】\n${state.userMeta.description}\n\n`;
@@ -2977,6 +3886,15 @@ function buildSystemPrompt() {
 当前真实时间：${formatTimestamp(Date.now())}
 用户消息前方括号内的时间戳代表该消息的真实发送时间，请据此感知时间流逝，并在状态栏"时间"字段中输出当前对话发生的真实时间（年/月/日 时:分格式）。
 根据真实时间推算合理的天气、光线、场景变化。例如深夜对话时${charName}可能犯困，清晨对话时描写晨光等。\n\n`;
+  }
+
+  // [7.5] 共读书
+  var readerInfo = getCurrentPageContent();
+  if (readerInfo) {
+    system += '【共读书】\n';
+    system += '你和' + userName + '正在一起阅读小说「' + readerInfo.bookTitle + '」，当前阅读到第 ' + readerInfo.page + ' 页（共 ' + readerInfo.totalPages + ' 页）。\n';
+    system += '用户消息末尾会附带当前页的小说内容。你应该了解正在阅读的内容，可以主动讨论情节、角色、感想，但不要逐字复述原文。\n';
+    system += '保持' + charName + '的性格来评论和讨论书中内容。\n\n';
   }
 
 // [8] 回复格式要求
@@ -3104,7 +4022,21 @@ function buildMessages() {
       apiMessages.push({ role: 'user', content: combined });
     }
   }
-
+  // 注入共读书上下文
+  var readerContent = getCurrentPageContent();
+  if (readerContent) {
+    var lastUserIdx = -1;
+    for (var ri = apiMessages.length - 1; ri >= 0; ri--) {
+      if (apiMessages[ri].role === 'user') { lastUserIdx = ri; break; }
+    }
+    var readingContext = '\n\n[共读书]\n书名：「' + readerContent.bookTitle + '」\n当前第 ' + readerContent.page + ' 页（共 ' + readerContent.totalPages + ' 页）\n当前页内容：\n' + readerContent.text.slice(0, 600);
+    if (readerContent.text.length > 600) readingContext += '\n...（内容过长已截断）';
+    if (lastUserIdx >= 0) {
+      if (typeof apiMessages[lastUserIdx].content === 'string') {
+        apiMessages[lastUserIdx].content += readingContext;
+      }
+    }
+  }
   return apiMessages;
 }
 
@@ -3136,11 +4068,11 @@ async function receiveReply() {
   const waitEl = document.createElement('div');
   waitEl.className = 'waiting-block';
   waitEl.id = 'waiting-anim';
-  const charName = getCharName();
+  const charDisplayName = getCharDisplayName();
   const waitTexts = [
-    charName + '正在为你泡一杯洋甘菊茶',
-    charName + '正在斟酌措辞',
-    charName + '正在整理思路'
+    charDisplayName + '正在为你泡一杯洋甘菊茶',
+    charDisplayName + '正在斟酌措辞',
+    charDisplayName + '正在整理思路'
   ];
   let waitIdx = 0;
   waitEl.innerHTML = getCharAvatarHTML() +
@@ -3632,6 +4564,7 @@ async function triggerMemorySummary() {
         if (trimmed) {
           var coreEntry = {
             id: genId('core'),
+            title: trimmed.length > 15 ? trimmed.slice(0, 15) + '...' : trimmed,
             content: trimmed,
             createdAt: Date.now(),
             updatedAt: Date.now()
@@ -3643,8 +4576,10 @@ async function triggerMemorySummary() {
     }
 
     if (summary) {
+      var autoTitle = summary.length > 20 ? summary.slice(0, 20) + '...' : summary;
       var ltEntry = {
         id: genId('lt'),
+        title: autoTitle,
         summary: summary,
         coveredMsgIds: toSummarize.map(function(m) { return m.id; }),
         createdAt: Date.now(),
@@ -3815,6 +4750,9 @@ function showMsgContextMenu(msgBlock, x, y) {
   if (isChar) {
     html += '<div class="msg-menu-item" data-action="regen"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>重回</div>';
   }
+  if (isChar) {
+    html += '<div class="msg-menu-item" data-action="favorite"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>收藏</div>';
+  }
   html += '<div class="msg-menu-item" data-action="multiselect"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>多选</div>';
   html += '<div class="msg-menu-item danger" data-action="delete"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>删除</div>';
   menu.innerHTML = html;
@@ -3856,7 +4794,7 @@ async function handleMsgMenuAction(action, msgId, msg) {
     const isUser = msg.role === 'user';
     const currentText = isUser ? (msg.userText || msg.rawText) : msg.rawText;
     const bodyOnly = currentText.replace(/\[\[STATUS\]\][\s\S]*?\[\[\/STATUS\]\]/, '').trim();
-    const newText = prompt('编辑消息：', bodyOnly);
+    const newText = await showPrompt('编辑消息', bodyOnly, { multiline: true });
     if (newText === null) return;
     const trimmed = newText.trim();
     if (!trimmed) {
@@ -3866,7 +4804,18 @@ async function handleMsgMenuAction(action, msgId, msg) {
     if (isUser) {
       msg.userText = trimmed;
       msg.rawText = trimmed;
-      try { await db.updateMessage(msgId, { userText: trimmed, rawText: trimmed }); } catch (_) {}
+      var newEmojiRefs = [];
+      var emojiRePattern = /\[emo:([^\]]+)\]/g;
+      var emojiMatch;
+      while ((emojiMatch = emojiRePattern.exec(trimmed)) !== null) {
+        var eName = emojiMatch[1];
+        var eObj = state.emojis.find(function(em) { return em.name === eName; });
+        if (eObj) newEmojiRefs.push({ name: eObj.name, url: eObj.url });
+      }
+      msg.emojiRefs = newEmojiRefs;
+      var emojiOnlyCheck = trimmed.replace(/\[emo:[^\]]+\]/g, '').trim();
+      msg.isEmojiOnly = newEmojiRefs.length > 0 && emojiOnlyCheck.length === 0;
+      try { await db.updateMessage(msgId, { userText: trimmed, rawText: trimmed, emojiRefs: newEmojiRefs, isEmojiOnly: msg.isEmojiOnly }); } catch (_) {}
     } else {
       let statusPart = '';
       const statusMatch = msg.rawText.match(/\[\[STATUS\]\][\s\S]*?\[\[\/STATUS\]\]/);
@@ -3919,6 +4868,8 @@ async function handleMsgMenuAction(action, msgId, msg) {
     if (state.pendingMessages.length > 0) {
       receiveReply();
     }
+  } else if (action === 'favorite') {
+    await addToFavorites(msg);
   } else if (action === 'multiselect') {
     enterMultiSelectMode(msgId);
   }
@@ -4056,6 +5007,8 @@ function closeCharModal() {
 }
 
 function loadCharModalData() {
+  document.getElementById('char-remark-input').value = state.charMeta.remark || '';
+  document.getElementById('user-remark-input').value = state.userMeta.remark || '';
   document.getElementById('char-name-input').value = state.charMeta.name;
   document.getElementById('char-desc-input').value = state.charMeta.description;
   document.getElementById('char-welcome-input').value = state.charMeta.welcomeText || '';
@@ -4087,6 +5040,7 @@ function refreshUserAvatarPreview() {
 }
 
 async function saveCharSettings() {
+  state.charMeta.remark = document.getElementById('char-remark-input').value.trim();
   state.charMeta.name = document.getElementById('char-name-input').value.trim();
   state.charMeta.description = document.getElementById('char-desc-input').value;
   state.charMeta.welcomeText = document.getElementById('char-welcome-input').value;
@@ -4101,6 +5055,7 @@ async function saveCharSettings() {
 }
 
 async function saveUserSettings() {
+  state.userMeta.remark = document.getElementById('user-remark-input').value.trim();
   state.userMeta.name = document.getElementById('user-name-input').value.trim();
   state.userMeta.description = document.getElementById('user-desc-input').value;
   try {
@@ -4116,13 +5071,9 @@ function updateTopBar() {
   const nameEl = document.getElementById('top-char-name');
   const avatarBtn = document.getElementById('btn-char-modal');
 
-  if (state.charMeta.name) {
-    nameEl.textContent = state.charMeta.name;
-    nameEl.classList.remove('placeholder');
-  } else {
-    nameEl.textContent = '谢蔚安';
-    nameEl.classList.add('placeholder');
-  }
+  var displayName = getCharDisplayName();
+  nameEl.textContent = displayName;
+  nameEl.classList.toggle('placeholder', !state.charMeta.name && !state.charMeta.remark);
 
   const letterEl = document.getElementById('top-avatar-letter');
   if (state.charAvatarURL) {
@@ -4134,7 +5085,7 @@ function updateTopBar() {
 
   // 更新 placeholder
   const input = document.getElementById('chat-input');
-  input.placeholder = '给' + getCharName() + '发条消息...';
+  input.placeholder = '给' + getCharDisplayName() + '发条消息...';
 }
 
 // ══════════════════════════════════════════════════════
@@ -4255,7 +5206,7 @@ function bindWorldBookEvents(listEl) {
       var folderId = el.dataset.folderRename;
       var folder = state.worldBookFolders.find(function(f) { return f.id === folderId; });
       if (!folder) return;
-      var newName = prompt('重命名文件夹：', folder.name);
+      var newName = await showPrompt('重命名文件夹', folder.name);
       if (newName === null) return;
       var trimmed = newName.trim();
       if (!trimmed) { showToast('名称不能为空', 'warning'); return; }
@@ -4725,50 +5676,612 @@ async function batchAddEmojis() {
 }
 
 // ══════════════════════════════════════════════════════
+// 收藏夹
+// ══════════════════════════════════════════════════════
+async function addToFavorites(msg) {
+  var alreadyExists = state.favorites.some(function(f) { return f.msgId === msg.id; });
+  if (alreadyExists) {
+    showToast('该消息已经收藏过了', 'warning');
+    return;
+  }
+  var bodyText = (msg.rawText || '').replace(/\[\[STATUS\]\][\s\S]*?\[\[\/STATUS\]\]/, '').trim();
+  var entry = {
+    id: genId('fav'),
+    msgId: msg.id,
+    msgTimestamp: msg.timestamp,
+    content: bodyText,
+    charName: getCharName(),
+    createdAt: Date.now()
+  };
+  try {
+    await db.addFavorite(entry);
+    state.favorites.push(entry);
+    showToast('已收藏', 'success');
+  } catch (err) {
+    showToast('收藏失败: ' + err.message, 'error');
+  }
+}
+
+function refreshFavoritesList(filterText) {
+  var listEl = document.getElementById('fav-list');
+  var emptyEl = document.getElementById('fav-empty');
+  var items = state.favorites.slice().reverse();
+  if (filterText) {
+    var lower = filterText.toLowerCase();
+    items = items.filter(function(f) { return f.content.toLowerCase().indexOf(lower) !== -1; });
+  }
+  if (items.length === 0) {
+    listEl.innerHTML = '';
+    emptyEl.style.display = '';
+    emptyEl.textContent = filterText ? '没有找到匹配的收藏' : '还没有收藏的消息';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    var fav = items[i];
+    var preview = fav.content;
+    var isClamped = preview.length > 200;
+    if (isClamped) preview = preview.slice(0, 200);
+    var timeStr = formatTimestamp(fav.createdAt);
+    html += '<div class="fav-card" data-fav-id="' + fav.id + '">';
+    html += '<div class="fav-card-body' + (isClamped ? ' clamped' : '') + '">' + escapeHtml(preview) + '</div>';
+    html += '<div class="fav-card-footer">';
+    html += '<span class="fav-card-time">' + escapeHtml(timeStr) + '</span>';
+    html += '<div class="fav-card-actions">';
+    html += '<button class="btn-icon-sm" data-fav-copy="' + fav.id + '" title="复制"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
+    html += '<button class="btn-icon-sm" data-fav-locate="' + fav.id + '" title="定位"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg></button>';
+    html += '<button class="btn-icon-sm" data-fav-del="' + fav.id + '" title="删除"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>';
+    html += '</div></div></div>';
+  }
+  listEl.innerHTML = html;
+  bindFavoriteEvents(listEl);
+}
+
+function bindFavoriteEvents(listEl) {
+  listEl.querySelectorAll('[data-fav-copy]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var id = btn.dataset.favCopy;
+      var fav = state.favorites.find(function(f) { return f.id === id; });
+      if (!fav) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(fav.content).then(function() {
+          showToast('已复制到剪贴板', 'success');
+        }).catch(function() {
+          fallbackCopy(fav.content);
+        });
+      } else {
+        fallbackCopy(fav.content);
+      }
+    });
+  });
+  listEl.querySelectorAll('[data-fav-locate]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var id = btn.dataset.favLocate;
+      var fav = state.favorites.find(function(f) { return f.id === id; });
+      if (!fav) return;
+      closeSettingsModal();
+      locateMessage(fav.msgId);
+    });
+  });
+  listEl.querySelectorAll('[data-fav-del]').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var id = btn.dataset.favDel;
+      var confirmed = await showConfirm('确认删除此收藏？', true);
+      if (!confirmed) return;
+      try {
+        await db.deleteFavorite(id);
+        state.favorites = state.favorites.filter(function(f) { return f.id !== id; });
+        refreshFavoritesList(document.getElementById('fav-search-input').value.trim());
+        showToast('已删除', 'success');
+      } catch (err) {
+        showToast('删除失败', 'error');
+      }
+    });
+  });
+}
+
+function fallbackCopy(text) {
+  var textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    document.execCommand('copy');
+    showToast('已复制到剪贴板', 'success');
+  } catch (_) {
+    showToast('复制失败', 'error');
+  }
+  document.body.removeChild(textarea);
+}
+
+// ══════════════════════════════════════════════════════
+// 聊天记录搜索
+// ══════════════════════════════════════════════════════
+var _searchDebounceTimer = null;
+
+function handleChatSearch(query) {
+  if (_searchDebounceTimer) clearTimeout(_searchDebounceTimer);
+  _searchDebounceTimer = setTimeout(function() {
+    performChatSearch(query);
+  }, 300);
+}
+
+function performChatSearch(query) {
+  var resultsEl = document.getElementById('chat-search-results');
+  var hintEl = document.getElementById('chat-search-hint');
+  var trimmed = query.trim();
+  if (!trimmed) {
+    resultsEl.innerHTML = '';
+    hintEl.style.display = '';
+    hintEl.textContent = '输入关键词开始搜索';
+    return;
+  }
+  hintEl.style.display = 'none';
+  var lower = trimmed.toLowerCase();
+  var matches = [];
+  for (var i = 0; i < state.messages.length; i++) {
+    var msg = state.messages[i];
+    var text = '';
+    if (msg.role === 'user') {
+      text = msg.userText || msg.rawText || '';
+    } else {
+      text = (msg.rawText || '').replace(/\[\[STATUS\]\][\s\S]*?\[\[\/STATUS\]\]/, '').trim();
+    }
+    if (text.toLowerCase().indexOf(lower) !== -1) {
+      matches.push({ msg: msg, text: text });
+    }
+  }
+  if (matches.length === 0) {
+    resultsEl.innerHTML = '<div class="search-empty">没有找到包含「' + escapeHtml(trimmed) + '」的消息</div>';
+    return;
+  }
+  var html = '';
+  var shown = matches.slice(-100).reverse();
+  for (var j = 0; j < shown.length; j++) {
+    var item = shown[j];
+    var roleName = item.msg.role === 'user' ? getUserDisplayName() : getCharDisplayName();
+    var roleClass = item.msg.role === 'user' ? ' user-role' : '';
+    var preview = item.text;
+    if (preview.length > 150) {
+      var idx = preview.toLowerCase().indexOf(lower);
+      var start = Math.max(0, idx - 40);
+      var end = Math.min(preview.length, idx + trimmed.length + 60);
+      preview = (start > 0 ? '...' : '') + preview.slice(start, end) + (end < item.text.length ? '...' : '');
+    }
+    var highlighted = escapeHtml(preview);
+    var escapedQuery = escapeHtml(trimmed);
+    var re = new RegExp('(' + escapedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+    highlighted = highlighted.replace(re, '<mark>$1</mark>');
+    var timeStr = item.msg.timestamp ? formatTimestamp(item.msg.timestamp) : '';
+    html += '<div class="search-result-item" data-search-msg-id="' + item.msg.id + '">';
+    html += '<span class="search-result-role' + roleClass + '">' + escapeHtml(roleName) + '</span>';
+    html += '<span class="search-result-text">' + highlighted + '</span>';
+    if (timeStr) html += '<span class="search-result-time">' + escapeHtml(timeStr) + '</span>';
+    html += '</div>';
+  }
+  resultsEl.innerHTML = html;
+  resultsEl.querySelectorAll('[data-search-msg-id]').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var msgId = el.dataset.searchMsgId;
+      closeSettingsModal();
+      locateMessage(msgId);
+    });
+  });
+}
+
+async function locateMessage(msgId) {
+  var el = document.querySelector('[data-msg-id="' + msgId + '"]');
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.remove('highlight-locate');
+    void el.offsetWidth;
+    el.classList.add('highlight-locate');
+    setTimeout(function() { el.classList.remove('highlight-locate'); }, 1600);
+    return;
+  }
+  var targetMsg = null;
+  try {
+    targetMsg = await db.getMessage(msgId);
+  } catch (_) {
+    showToast('消息不存在或已被删除', 'warning');
+    return;
+  }
+  if (!targetMsg) {
+    showToast('消息不存在或已被删除', 'warning');
+    return;
+  }
+  var alreadyLoaded = state.messages.some(function(m) { return m.id === msgId; });
+  if (!alreadyLoaded) {
+    try {
+      var allMsgs = await db.getAllMessages();
+      state.messages = allMsgs;
+      if (allMsgs.length > 0) {
+        state.oldestTimestamp = allMsgs[0].timestamp;
+      }
+      state.hasMoreMessages = false;
+      renderAllMessages();
+    } catch (err) {
+      showToast('加载消息失败', 'error');
+      return;
+    }
+  }
+  requestAnimationFrame(function() {
+    var el2 = document.querySelector('[data-msg-id="' + msgId + '"]');
+    if (el2) {
+      el2.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el2.classList.remove('highlight-locate');
+      void el2.offsetWidth;
+      el2.classList.add('highlight-locate');
+      setTimeout(function() { el2.classList.remove('highlight-locate'); }, 1600);
+    } else {
+      showToast('无法定位到该消息', 'warning');
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// 共读书
+// ══════════════════════════════════════════════════════
+var _pendingBookFile = null;
+
+function openBookshelf() {
+  document.getElementById('bookshelf-modal').classList.add('open');
+  refreshBookList();
+}
+
+function closeBookshelf() {
+  document.getElementById('bookshelf-modal').classList.remove('open');
+}
+
+function refreshBookList() {
+  var listEl = document.getElementById('book-list');
+  var emptyEl = document.getElementById('book-empty');
+  if (state.books.length === 0) {
+    listEl.innerHTML = '';
+    emptyEl.style.display = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  var html = '';
+  for (var i = 0; i < state.books.length; i++) {
+    var book = state.books[i];
+    var charCount = book.content ? book.content.length : 0;
+    var meta = charCount > 10000 ? (Math.round(charCount / 10000 * 10) / 10) + '万字' : charCount + '字';
+    html += '<div class="book-item" data-book-id="' + book.id + '">';
+    html += '<div class="book-item-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>';
+    html += '<div class="book-item-info">';
+    html += '<div class="book-item-title">' + escapeHtml(book.title || '未命名') + '</div>';
+    html += '<div class="book-item-meta">' + escapeHtml(meta) + '</div>';
+    html += '</div>';
+    html += '<div class="book-item-actions" onclick="event.stopPropagation()">';
+    html += '<button class="btn-icon-sm" data-book-rename="' + book.id + '" title="重命名"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>';
+    html += '<button class="btn-icon-sm" data-book-del="' + book.id + '" title="删除"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>';
+    html += '</div></div>';
+  }
+  listEl.innerHTML = html;
+
+  listEl.querySelectorAll('.book-item').forEach(function(el) {
+    el.addEventListener('click', function(e) {
+      if (e.target.closest('.book-item-actions')) return;
+      var bookId = el.dataset.bookId;
+      openReader(bookId);
+      closeBookshelf();
+    });
+  });
+  listEl.querySelectorAll('[data-book-rename]').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var id = btn.dataset.bookRename;
+      var book = state.books.find(function(b) { return b.id === id; });
+      if (!book) return;
+      var newName = await showPrompt('重命名书籍', book.title);
+      if (newName === null) return;
+      var trimmed = newName.trim();
+      if (!trimmed) { showToast('书名不能为空', 'warning'); return; }
+      book.title = trimmed;
+      try { await db.updateBook(id, { title: trimmed }); } catch (_) {}
+      refreshBookList();
+      if (state.readerState.currentBookId === id) {
+        document.getElementById('reader-title').textContent = trimmed;
+      }
+      showToast('已重命名', 'success');
+    });
+  });
+  listEl.querySelectorAll('[data-book-del]').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var id = btn.dataset.bookDel;
+      var confirmed = await showConfirm('确认删除此书籍？', true);
+      if (!confirmed) return;
+      try {
+        await db.deleteBook(id);
+        state.books = state.books.filter(function(b) { return b.id !== id; });
+        if (state.readerState.currentBookId === id) {
+          closeReader();
+        }
+        refreshBookList();
+        showToast('已删除', 'success');
+      } catch (err) {
+        showToast('删除失败', 'error');
+      }
+    });
+  });
+}
+
+function startBookUpload() {
+  document.getElementById('book-file-input').click();
+}
+
+function handleBookFileSelected(file) {
+  if (!file) return;
+  _pendingBookFile = file;
+  document.getElementById('book-upload-filename').textContent = file.name;
+  var defaultName = file.name.replace(/\.txt$/i, '');
+  document.getElementById('book-upload-name').value = defaultName;
+  document.getElementById('book-upload-modal').classList.add('open');
+}
+
+async function confirmBookUpload() {
+  var name = document.getElementById('book-upload-name').value.trim();
+  if (!name) { showToast('请输入书名', 'warning'); return; }
+  if (!_pendingBookFile) { showToast('未选择文件', 'warning'); return; }
+  try {
+    var content = await _pendingBookFile.text();
+    if (!content || !content.trim()) {
+      showToast('文件内容为空', 'warning');
+      return;
+    }
+    var book = {
+      id: genId('book'),
+      title: name,
+      content: content,
+      createdAt: Date.now()
+    };
+    await db.addBook(book);
+    state.books.push(book);
+    refreshBookList();
+    document.getElementById('book-upload-modal').classList.remove('open');
+    _pendingBookFile = null;
+    showToast('书籍已添加', 'success');
+  } catch (err) {
+    showToast('读取文件失败: ' + err.message, 'error');
+  }
+}
+
+function cancelBookUpload() {
+  document.getElementById('book-upload-modal').classList.remove('open');
+  _pendingBookFile = null;
+}
+
+async function openReader(bookId) {
+  var book = state.books.find(function(b) { return b.id === bookId; });
+  if (!book) { showToast('书籍不存在', 'warning'); return; }
+  state.readerState.currentBookId = bookId;
+  state.readerState.currentPage = 1;
+  try { await loadReaderProgress(bookId); } catch (_) {}
+  var floatEl = document.getElementById('reader-float');
+  floatEl.classList.add('open');
+  floatEl.classList.remove('zoomed', 'mini');
+  state.readerState.zoomed = false;
+  state.readerState.viewMode = 'normal';
+  document.getElementById('reader-title').textContent = book.title;
+  applyReaderSettings();
+  renderReaderPage();
+  updateReaderRadiusClasses();
+}
+
+function closeReader() {
+  var floatEl = document.getElementById('reader-float');
+  floatEl.classList.remove('open', 'zoomed', 'mini');
+  floatEl.style.left = '';
+  floatEl.style.top = '';
+  floatEl.style.right = '';
+  floatEl.style.bottom = '';
+  floatEl.style.width = '';
+  floatEl.style.height = '';
+  floatEl.style.position = '';
+  floatEl.style.margin = '';
+  state.readerState.currentBookId = null;
+  state.readerState.zoomed = false;
+  state.readerState.viewMode = 'normal';
+  state.readerState.viewMode = 'normal';
+  document.getElementById('reader-settings-panel').classList.remove('open');
+  updateReaderRadiusClasses();
+}
+
+function toggleReaderZoom() {
+  var floatEl = document.getElementById('reader-float');
+  // 三种状态循环：normal → zoomed → mini → normal
+  var currentMode = state.readerState.viewMode || 'normal';
+  var nextMode = 'normal';
+  if (currentMode === 'normal') {
+    nextMode = 'zoomed';
+  } else if (currentMode === 'zoomed') {
+    nextMode = 'mini';
+  } else {
+    nextMode = 'normal';
+  }
+  state.readerState.viewMode = nextMode;
+  floatEl.classList.remove('zoomed', 'mini');
+  // 重置拖拽位置
+  floatEl.style.left = '';
+  floatEl.style.top = '';
+  floatEl.style.right = '';
+  floatEl.style.bottom = '';
+  floatEl.style.width = '';
+  floatEl.style.height = '';
+  floatEl.style.position = '';
+  floatEl.style.margin = '';
+  if (nextMode === 'zoomed') {
+    floatEl.classList.add('zoomed');
+  } else if (nextMode === 'mini') {
+    floatEl.classList.add('mini');
+  }
+  state.readerState.zoomed = (nextMode === 'zoomed');
+  updateReaderRadiusClasses();
+}
+
+function updateReaderRadiusClasses() {
+  var header = document.querySelector('.reader-header');
+  var footer = document.querySelector('.reader-footer');
+  if (!header || !footer) return;
+  var mode = state.readerState.viewMode || 'normal';
+  if (mode === 'zoomed') {
+    header.classList.remove('has-radius');
+    footer.classList.remove('has-radius');
+  } else {
+    header.classList.add('has-radius');
+    footer.classList.add('has-radius');
+  }
+}
+
+function getReaderTotalPages() {
+  var book = state.books.find(function(b) { return b.id === state.readerState.currentBookId; });
+  if (!book || !book.content) return 0;
+  return Math.ceil(book.content.length / state.readerState.charsPerPage);
+}
+
+function renderReaderPage() {
+  var book = state.books.find(function(b) { return b.id === state.readerState.currentBookId; });
+  if (!book) return;
+  var total = getReaderTotalPages();
+  var page = state.readerState.currentPage;
+  if (page < 1) page = 1;
+  if (page > total) page = total;
+  state.readerState.currentPage = page;
+  var start = (page - 1) * state.readerState.charsPerPage;
+  var end = start + state.readerState.charsPerPage;
+  var pageText = book.content.slice(start, end);
+  document.getElementById('reader-body').textContent = pageText;
+  document.getElementById('reader-page-info').textContent = page + '/' + total;
+  document.getElementById('reader-jump-page').value = page;
+  document.getElementById('reader-jump-page').max = total;
+  document.getElementById('reader-prev').disabled = page <= 1;
+  document.getElementById('reader-next').disabled = page >= total;
+  document.getElementById('reader-body').scrollTop = 0;
+  saveReaderProgress(book.id, page);
+}
+
+function applyReaderSettings() {
+  var body = document.getElementById('reader-body');
+  var rs = state.readerState;
+  body.style.fontSize = rs.fontSize + 'px';
+  body.style.letterSpacing = rs.letterSpacing + 'em';
+  body.style.lineHeight = String(rs.lineHeight);
+  document.getElementById('reader-chars-per-page').value = rs.charsPerPage;
+  document.getElementById('reader-font-size').value = rs.fontSize;
+  document.getElementById('reader-font-size-val').textContent = rs.fontSize;
+  document.getElementById('reader-letter-spacing').value = rs.letterSpacing;
+  document.getElementById('reader-letter-spacing-val').textContent = rs.letterSpacing;
+  document.getElementById('reader-line-height').value = rs.lineHeight;
+  document.getElementById('reader-line-height-val').textContent = rs.lineHeight;
+}
+
+async function saveReaderProgress(bookId, page) {
+  try {
+    await db.setSetting('reader_progress_' + bookId, page);
+    await db.setSetting('reader_settings', {
+      charsPerPage: state.readerState.charsPerPage,
+      fontSize: state.readerState.fontSize,
+      letterSpacing: state.readerState.letterSpacing,
+      lineHeight: state.readerState.lineHeight
+    });
+  } catch (_) {}
+}
+
+async function loadReaderProgress(bookId) {
+  try {
+    var page = await db.getSetting('reader_progress_' + bookId);
+    if (page && typeof page === 'number') {
+      state.readerState.currentPage = page;
+    }
+  } catch (_) {}
+}
+
+function getCurrentPageContent() {
+  var book = state.books.find(function(b) { return b.id === state.readerState.currentBookId; });
+  if (!book) return null;
+  var page = state.readerState.currentPage;
+  var start = (page - 1) * state.readerState.charsPerPage;
+  var end = start + state.readerState.charsPerPage;
+  return {
+    bookTitle: book.title,
+    page: page,
+    totalPages: getReaderTotalPages(),
+    text: book.content.slice(start, end)
+  };
+}
+
+// ══════════════════════════════════════════════════════
 // 记忆区 UI
 // ══════════════════════════════════════════════════════
 function refreshCoreMemList() {
-  const listEl = document.getElementById('core-mem-list');
-  const emptyEl = document.getElementById('core-mem-empty');
+  var listEl = document.getElementById('core-mem-list');
+  var emptyEl = document.getElementById('core-mem-empty');
   if (state.coreMemory.length === 0) {
     listEl.innerHTML = '';
     emptyEl.style.display = '';
     return;
   }
   emptyEl.style.display = 'none';
-  let html = '';
-  for (const entry of state.coreMemory) {
-    html += '<div class="mem-item" data-core-id="' + entry.id + '">' +
-      '<span class="mem-text">· ' + escapeHtml(entry.content) + '</span>' +
-      '<button class="btn-icon-sm" data-core-edit="' + entry.id + '"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>' +
-      '<button class="btn-icon-sm" data-core-del="' + entry.id + '"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
+  var html = '';
+  for (var i = 0; i < state.coreMemory.length; i++) {
+    var entry = state.coreMemory[i];
+    var displayTitle = entry.title || '未命名';
+    html += '<div class="mem-item" data-core-id="' + entry.id + '" style="flex-direction:column;align-items:stretch;gap:4px">' +
+      '<div style="display:flex;align-items:center;gap:8px">' +
+      '<span style="font-size:14px;color:var(--text-primary);font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">· ' + escapeHtml(displayTitle) + '</span>' +
+      '<button class="btn-icon-sm" data-core-expand="' + entry.id + '" title="展开/收起"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>' +
+      '<button class="btn-icon-sm" data-core-edit="' + entry.id + '" title="编辑"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>' +
+      '<button class="btn-icon-sm" data-core-del="' + entry.id + '" title="删除"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
+      '</div>' +
+      '<div class="mem-expand-content" data-core-body="' + entry.id + '" style="display:none;font-size:13px;color:var(--text-secondary);line-height:1.6;padding:4px 0 0 12px;border-top:1px dashed var(--border);margin-top:4px">' + escapeHtml(entry.content) + '</div>' +
       '</div>';
   }
   listEl.innerHTML = html;
 
-  listEl.querySelectorAll('[data-core-edit]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.coreEdit;
-      const entry = state.coreMemory.find(e => e.id === id);
-      if (!entry) return;
-      const newContent = prompt('编辑核心记忆：', entry.content);
-      if (newContent !== null && newContent.trim()) {
-        entry.content = newContent.trim();
-        entry.updatedAt = Date.now();
-        db.updateCoreMemory(id, { content: entry.content, updatedAt: entry.updatedAt }).catch(() => {});
-        refreshCoreMemList();
-      }
+  listEl.querySelectorAll('[data-core-expand]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var id = btn.dataset.coreExpand;
+      var body = listEl.querySelector('[data-core-body="' + id + '"]');
+      if (!body) return;
+      var isOpen = body.style.display !== 'none';
+      body.style.display = isOpen ? 'none' : '';
+      var svg = btn.querySelector('svg');
+      if (svg) svg.style.transform = isOpen ? '' : 'rotate(180deg)';
     });
   });
 
-  listEl.querySelectorAll('[data-core-del]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = btn.dataset.coreDel;
-      const confirmed = await showConfirm('确认删除此核心记忆？', true);
+  listEl.querySelectorAll('[data-core-edit]').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var id = btn.dataset.coreEdit;
+      var entry = state.coreMemory.find(function(e) { return e.id === id; });
+      if (!entry) return;
+      var newTitle = await showPrompt('编辑核心记忆标题', entry.title || '');
+      if (newTitle === null) return;
+      var newContent = await showPrompt('编辑核心记忆内容', entry.content, { multiline: true });
+      if (newContent === null) return;
+      if (!newContent.trim()) { showToast('内容不能为空', 'warning'); return; }
+      entry.title = (newTitle || '').trim() || '未命名';
+      entry.content = newContent.trim();
+      entry.updatedAt = Date.now();
+      try {
+        await db.updateCoreMemory(id, { title: entry.title, content: entry.content, updatedAt: entry.updatedAt });
+      } catch (_) {}
+      refreshCoreMemList();
+      showToast('已更新', 'success');
+    });
+  });
+
+  listEl.querySelectorAll('[data-core-del]').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var id = btn.dataset.coreDel;
+      var confirmed = await showConfirm('确认删除此核心记忆？', true);
       if (!confirmed) return;
       try {
         await db.deleteCoreMemory(id);
-        state.coreMemory = state.coreMemory.filter(e => e.id !== id);
+        state.coreMemory = state.coreMemory.filter(function(e) { return e.id !== id; });
         refreshCoreMemList();
         showToast('已删除', 'success');
       } catch (err) {
@@ -4779,48 +6292,71 @@ function refreshCoreMemList() {
 }
 
 function refreshLTMemList() {
-  const listEl = document.getElementById('lt-mem-list');
-  const emptyEl = document.getElementById('lt-mem-empty');
+  var listEl = document.getElementById('lt-mem-list');
+  var emptyEl = document.getElementById('lt-mem-empty');
   if (state.longTermMemory.length === 0) {
     listEl.innerHTML = '';
     emptyEl.style.display = '';
     return;
   }
   emptyEl.style.display = 'none';
-  let html = '';
-  state.longTermMemory.forEach((entry, idx) => {
-    const preview = entry.summary.length > 80 ? entry.summary.slice(0, 80) + '...' : entry.summary;
-    html += '<div class="mem-item" data-lt-id="' + entry.id + '">' +
-      '<span class="mem-text">' + (idx + 1) + '. ' + escapeHtml(preview) + '</span>' +
-      '<button class="btn-icon-sm" data-lt-edit="' + entry.id + '"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>' +
-      '<button class="btn-icon-sm" data-lt-del="' + entry.id + '"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
+  var html = '';
+  for (var i = 0; i < state.longTermMemory.length; i++) {
+    var entry = state.longTermMemory[i];
+    var displayTitle = entry.title || ('记忆 #' + (i + 1));
+    html += '<div class="mem-item" data-lt-id="' + entry.id + '" style="flex-direction:column;align-items:stretch;gap:4px">' +
+      '<div style="display:flex;align-items:center;gap:8px">' +
+      '<span style="font-size:14px;color:var(--text-primary);font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (i + 1) + '. ' + escapeHtml(displayTitle) + '</span>' +
+      '<button class="btn-icon-sm" data-lt-expand="' + entry.id + '" title="展开/收起"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>' +
+      '<button class="btn-icon-sm" data-lt-edit="' + entry.id + '" title="编辑"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>' +
+      '<button class="btn-icon-sm" data-lt-del="' + entry.id + '" title="删除"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
+      '</div>' +
+      '<div class="mem-expand-content" data-lt-body="' + entry.id + '" style="display:none;font-size:13px;color:var(--text-secondary);line-height:1.6;padding:4px 0 0 12px;border-top:1px dashed var(--border);margin-top:4px">' + escapeHtml(entry.summary) + '</div>' +
       '</div>';
-  });
+  }
   listEl.innerHTML = html;
 
-  listEl.querySelectorAll('[data-lt-edit]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.ltEdit;
-      const entry = state.longTermMemory.find(e => e.id === id);
-      if (!entry) return;
-      const newSummary = prompt('编辑长期记忆：', entry.summary);
-      if (newSummary !== null && newSummary.trim()) {
-        entry.summary = newSummary.trim();
-        entry.updatedAt = Date.now();
-        db.updateLongTermMemory(id, { summary: entry.summary, updatedAt: entry.updatedAt }).catch(() => {});
-        refreshLTMemList();
-      }
+  listEl.querySelectorAll('[data-lt-expand]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var id = btn.dataset.ltExpand;
+      var body = listEl.querySelector('[data-lt-body="' + id + '"]');
+      if (!body) return;
+      var isOpen = body.style.display !== 'none';
+      body.style.display = isOpen ? 'none' : '';
+      var svg = btn.querySelector('svg');
+      if (svg) svg.style.transform = isOpen ? '' : 'rotate(180deg)';
     });
   });
 
-  listEl.querySelectorAll('[data-lt-del]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = btn.dataset.ltDel;
-      const confirmed = await showConfirm('确认删除此长期记忆？', true);
+  listEl.querySelectorAll('[data-lt-edit]').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var id = btn.dataset.ltEdit;
+      var entry = state.longTermMemory.find(function(e) { return e.id === id; });
+      if (!entry) return;
+      var newTitle = await showPrompt('编辑长期记忆标题', entry.title || '');
+      if (newTitle === null) return;
+      var newSummary = await showPrompt('编辑长期记忆内容', entry.summary, { multiline: true });
+      if (newSummary === null) return;
+      if (!newSummary.trim()) { showToast('内容不能为空', 'warning'); return; }
+      entry.title = (newTitle || '').trim() || '未命名';
+      entry.summary = newSummary.trim();
+      entry.updatedAt = Date.now();
+      try {
+        await db.updateLongTermMemory(id, { title: entry.title, summary: entry.summary, updatedAt: entry.updatedAt });
+      } catch (_) {}
+      refreshLTMemList();
+      showToast('已更新', 'success');
+    });
+  });
+
+  listEl.querySelectorAll('[data-lt-del]').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var id = btn.dataset.ltDel;
+      var confirmed = await showConfirm('确认删除此长期记忆？', true);
       if (!confirmed) return;
       try {
         await db.deleteLongTermMemory(id);
-        state.longTermMemory = state.longTermMemory.filter(e => e.id !== id);
+        state.longTermMemory = state.longTermMemory.filter(function(e) { return e.id !== id; });
         refreshLTMemList();
         showToast('已删除', 'success');
       } catch (err) {
@@ -5056,32 +6592,6 @@ async function fetchModels() {
   }
 }
 
-function renderApiPresets() {
-  const bar = document.getElementById('api-preset-bar');
-  const saveBtn = bar.querySelector('#btn-save-api-preset');
-  const existingChips = bar.querySelectorAll('.preset-chip:not(#btn-save-api-preset)');
-  existingChips.forEach(c => c.remove());
-
-  for (const preset of state.apiPresets) {
-    const chip = document.createElement('button');
-    chip.className = 'preset-chip';
-    chip.innerHTML = escapeHtml(preset.name) +
-      '<span class="preset-del" data-preset-id="' + preset.id + '"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>';
-    chip.addEventListener('click', (e) => {
-      if (e.target.closest('.preset-del')) return;
-      applyApiPreset(preset);
-    });
-    chip.querySelector('.preset-del').addEventListener('click', async (e) => {
-      e.stopPropagation();
-      state.apiPresets = state.apiPresets.filter(p => p.id !== preset.id);
-      try { await db.setSetting('api_presets', state.apiPresets); } catch (_) {}
-      renderApiPresets();
-      showToast('预设已删除', 'success');
-    });
-    bar.insertBefore(chip, saveBtn);
-  }
-}
-
 function applyApiPreset(preset) {
   state.apiSettings = { ...preset.settings };
   document.getElementById('api-base-url').value = state.apiSettings.baseUrl;
@@ -5099,9 +6609,149 @@ function applyApiPreset(preset) {
   scheduleApiSave();
   showToast('已应用预设：' + preset.name, 'success');
 }
+function renderApiPresets() {
+}
+function openApiPresetModal() {
+  var modal = document.getElementById('preset-modal');
+  document.getElementById('preset-modal-title').textContent = 'API 预设管理';
+  renderApiPresetList();
+  var addBtn = document.getElementById('preset-modal-add');
+  addBtn.textContent = '';
+  addBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;stroke-width:2;fill:none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 保存当前配置';
+  var newAddBtn = addBtn.cloneNode(true);
+  addBtn.parentNode.replaceChild(newAddBtn, addBtn);
+  newAddBtn.addEventListener('click', async function() {
+    await saveApiPreset();
+    renderApiPresetList();
+  });
+  modal.classList.add('open');
+}
 
+function renderApiPresetList() {
+  var listEl = document.getElementById('preset-modal-list');
+  if (state.apiPresets.length === 0) {
+    listEl.innerHTML = '<div class="preset-list-empty">还没有保存的预设</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < state.apiPresets.length; i++) {
+    var p = state.apiPresets[i];
+    var meta = (p.settings.model || '未知模型');
+    html += '<div class="preset-list-item" data-api-preset-id="' + p.id + '">';
+    html += '<span class="preset-list-name">' + escapeHtml(p.name) + '</span>';
+    html += '<span class="preset-list-meta">' + escapeHtml(meta) + '</span>';
+    html += '<div class="preset-list-actions">';
+    html += '<button class="btn-icon-sm" data-api-preset-apply="' + p.id + '" title="应用"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></button>';
+    html += '<button class="btn-icon-sm" data-api-preset-del="' + p.id + '" title="删除"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>';
+    html += '</div></div>';
+  }
+  listEl.innerHTML = html;
+
+  listEl.querySelectorAll('[data-api-preset-apply]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var id = btn.dataset.apiPresetApply;
+      var preset = state.apiPresets.find(function(p) { return p.id === id; });
+      if (preset) {
+        applyApiPreset(preset);
+        document.getElementById('preset-modal').classList.remove('open');
+      }
+    });
+  });
+
+  listEl.querySelectorAll('[data-api-preset-del]').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var id = btn.dataset.apiPresetDel;
+      var confirmed = await showConfirm('确认删除此预设？', true);
+      if (!confirmed) return;
+      state.apiPresets = state.apiPresets.filter(function(p) { return p.id !== id; });
+      try { await db.setSetting('api_presets', state.apiPresets); } catch (_) {}
+      renderApiPresetList();
+      showToast('预设已删除', 'success');
+    });
+  });
+}
+
+function openFontPresetModal() {
+  var modal = document.getElementById('preset-modal');
+  document.getElementById('preset-modal-title').textContent = '字体预设管理';
+  renderFontPresetList();
+  var addBtn = document.getElementById('preset-modal-add');
+  addBtn.textContent = '';
+  addBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;stroke-width:2;fill:none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 保存当前字体';
+  var newAddBtn = addBtn.cloneNode(true);
+  addBtn.parentNode.replaceChild(newAddBtn, addBtn);
+  newAddBtn.addEventListener('click', async function() {
+    var fontUrl = document.getElementById('custom-font-url').value.trim();
+    var fontName = document.getElementById('custom-font-name').value.trim();
+    if (!fontName) {
+      showToast('请先在页面设置中填写字体名称', 'warning');
+      return;
+    }
+    var presetName = await showPrompt('保存字体预设', fontName, { placeholder: '为字体预设起个名字' });
+    if (!presetName || !presetName.trim()) return;
+    var preset = { id: genId('fp'), name: presetName.trim(), url: fontUrl, fontFamily: fontName };
+    state.fontPresets.push(preset);
+    try { await db.setSetting('font_presets', state.fontPresets); } catch (_) {}
+    renderFontPresetList();
+    renderFontPresets();
+    showToast('字体预设已保存', 'success');
+  });
+  modal.classList.add('open');
+}
+
+function renderFontPresetList() {
+  var listEl = document.getElementById('preset-modal-list');
+  if (state.fontPresets.length === 0) {
+    listEl.innerHTML = '<div class="preset-list-empty">还没有保存的字体预设</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < state.fontPresets.length; i++) {
+    var p = state.fontPresets[i];
+    html += '<div class="preset-list-item" data-font-preset-id="' + p.id + '">';
+    html += '<span class="preset-list-name">' + escapeHtml(p.name) + '</span>';
+    html += '<span class="preset-list-meta">' + escapeHtml(p.fontFamily || '') + '</span>';
+    html += '<div class="preset-list-actions">';
+    html += '<button class="btn-icon-sm" data-font-preset-apply="' + p.id + '" title="应用"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></button>';
+    html += '<button class="btn-icon-sm" data-font-preset-del="' + p.id + '" title="删除"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>';
+    html += '</div></div>';
+  }
+  listEl.innerHTML = html;
+
+  listEl.querySelectorAll('[data-font-preset-apply]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var id = btn.dataset.fontPresetApply;
+      var preset = state.fontPresets.find(function(p) { return p.id === id; });
+      if (!preset) return;
+      state.pageSettings.fontFamily = 'custom';
+      state.pageSettings.customFontUrl = preset.url;
+      state.pageSettings.customFontFamily = preset.fontFamily;
+      document.getElementById('custom-font-url').value = preset.url;
+      document.getElementById('custom-font-name').value = preset.fontFamily;
+      document.querySelectorAll('input[name="fontFamily"]').forEach(function(r) { r.checked = r.value === 'custom'; });
+      document.getElementById('custom-font-area').style.display = '';
+      applyPageSettings();
+      schedulePageSave();
+      document.getElementById('preset-modal').classList.remove('open');
+      showToast('已应用字体：' + preset.name, 'success');
+    });
+  });
+
+  listEl.querySelectorAll('[data-font-preset-del]').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var id = btn.dataset.fontPresetDel;
+      var confirmed = await showConfirm('确认删除此字体预设？', true);
+      if (!confirmed) return;
+      state.fontPresets = state.fontPresets.filter(function(p) { return p.id !== id; });
+      try { await db.setSetting('font_presets', state.fontPresets); } catch (_) {}
+      renderFontPresetList();
+      renderFontPresets();
+      showToast('预设已删除', 'success');
+    });
+  });
+}
 async function saveApiPreset() {
-  const name = prompt('为当前 API 配置命名：');
+  const name = await showPrompt('保存 API 预设', '', { placeholder: '为当前配置起个名字' });
   if (!name || !name.trim()) return;
   const format = document.querySelector('input[name="apiFormat"]:checked').value;
   const preset = {
@@ -5143,6 +6793,11 @@ async function clearAllData() {
     state.worldBook = [];
     state.worldBookFolders = [];
     state.emojis = [];
+    state.favorites = [];
+    state.books = [];
+    state.readerState.currentBookId = null;
+    var readerEl = document.getElementById('reader-float');
+    if (readerEl) readerEl.classList.remove('open', 'zoomed');
     state.charMeta = { name: '', avatarType: 'none', description: '' };
     state.userMeta = { name: '', description: '' };
     state.charAvatarURL = null;
@@ -5176,21 +6831,90 @@ async function compressData() {
     showToast('压缩失败: ' + err.message, 'error');
   }
 }
-
+async function clearAllMessages() {
+  var confirmed = await showConfirm('确认清空所有对话记录？\n角色设定、记忆、世界书等配置将保留。\n此操作不可撤销！', true);
+  if (!confirmed) return;
+  try {
+    var tx = db._tx('messages', 'readwrite');
+    tx.objectStore('messages').clear();
+    await db._txComplete(tx);
+    state.messages = [];
+    state.pendingMessages = [];
+    state.lastStatus = null;
+    state.oldestTimestamp = Infinity;
+    state.hasMoreMessages = false;
+    document.getElementById('status-toggle-bar').classList.remove('has-status');
+    document.getElementById('status-drawer').classList.remove('open');
+    state.statusDrawerOpen = false;
+    document.documentElement.style.setProperty('--statusbar-height', '0px');
+    renderAllMessages();
+    updateSendButton();
+    showToast('对话记录已清空', 'success');
+    await playWelcomeMessage();
+  } catch (err) {
+    showToast('清空失败: ' + err.message, 'error');
+  }
+}
 async function exportData() {
   try {
-    const data = await db.exportAll();
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'xwa_backup_' + new Date().toISOString().slice(0, 10) + '.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast('数据已导出', 'success');
+    var data = await db.exportAll();
+    var json = JSON.stringify(data, null, 2);
+    var blob = new Blob([json], { type: 'application/json' });
+    var fileName = 'xwa_backup_' + new Date().toISOString().slice(0, 10) + '.json';
+
+    // 方法一：尝试直接下载到本地
+    var downloaded = false;
+    try {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function() { URL.revokeObjectURL(url); }, 5000);
+      downloaded = true;
+    } catch (dlErr) {
+      downloaded = false;
+    }
+
+    if (downloaded) {
+      var confirmed = await showConfirm('文件是否已成功下载？\n如果没有，点击「取消」将尝试通过分享方式导出。');
+      if (confirmed) {
+        showToast('数据已导出', 'success');
+        return;
+      }
+    }
+
+    // 方法二：通过系统分享导出
+    if (navigator.share && typeof File !== 'undefined') {
+      try {
+        var shareFile = new File([json], fileName, { type: 'application/json' });
+        await navigator.share({
+          title: '聊天数据备份',
+          text: '导出的聊天数据备份文件',
+          files: [shareFile]
+        });
+        showToast('数据已通过分享导出', 'success');
+        return;
+      } catch (shareErr) {
+        if (shareErr.name === 'AbortError') {
+          showToast('已取消分享', 'warning');
+          return;
+        }
+      }
+    }
+
+    // 两种方法都失败，尝试用 Blob URL 再试一次
+    try {
+      var fallbackUrl = URL.createObjectURL(blob);
+      window.open(fallbackUrl, '_blank');
+      setTimeout(function() { URL.revokeObjectURL(fallbackUrl); }, 10000);
+      showToast('已在新窗口打开备份文件，请手动保存', 'warning');
+    } catch (openErr) {
+      showToast('导出失败，请尝试使用浏览器打开本页面后再导出', 'error');
+    }
   } catch (err) {
     showToast('导出失败: ' + err.message, 'error');
   }
@@ -5374,6 +7098,17 @@ setSplashProgress(75);
     state.worldBook = await db.getWorldBook();
     state.worldBookFolders = await db.getWorldBookFolders();
     state.emojis = await db.getEmojis();
+    try { state.favorites = await db.getFavorites(); } catch (_) { state.favorites = []; }
+    try { state.books = await db.getBooks(); } catch (_) { state.books = []; }
+    try {
+      var savedReaderSettings = await db.getSetting('reader_settings');
+      if (savedReaderSettings) {
+        if (savedReaderSettings.charsPerPage) state.readerState.charsPerPage = savedReaderSettings.charsPerPage;
+        if (savedReaderSettings.fontSize) state.readerState.fontSize = savedReaderSettings.fontSize;
+        if (savedReaderSettings.letterSpacing !== undefined) state.readerState.letterSpacing = savedReaderSettings.letterSpacing;
+        if (savedReaderSettings.lineHeight) state.readerState.lineHeight = savedReaderSettings.lineHeight;
+      }
+    } catch (_) {}
     const savedPresets = await db.getSetting('api_presets');
     const savedFontPresets = await db.getSetting('font_presets');
     if (savedFontPresets) state.fontPresets = savedFontPresets;
@@ -5428,6 +7163,7 @@ setSplashProgress(90);
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initMsgLongPress();
+  initDomRecycling();
   initApp();
 
   // 顶部栏
@@ -5473,10 +7209,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('[data-func="emoji"]').addEventListener('click', showDrawerEmoji);
     // 发送图片
   document.querySelector('[data-func="send-image"]').addEventListener('click', function() {
+    document.getElementById('drawer-image-file').click();
     closeDrawer();
-    setTimeout(function() {
-      document.getElementById('drawer-image-file').click();
-    }, 350);
   });
   document.getElementById('drawer-image-file').addEventListener('change', async function(e) {
     var files = e.target.files;
@@ -5524,7 +7258,7 @@ document.addEventListener('DOMContentLoaded', () => {
     for (var i = 0; i < parts.length; i++) {
       previewText += '[' + (parts[i].type === 'dialog' ? '对话' : '动作') + '] ' + parts[i].text + '\n';
     }
-    alert('开场白预览：\n\n' + previewText);
+    showAlert('开场白预览', previewText);
   });
 
   // 开场白立即生效
@@ -5610,7 +7344,7 @@ document.addEventListener('DOMContentLoaded', () => {
     openWorldBookEditor(null);
   });
   document.getElementById('btn-add-wb-folder').addEventListener('click', async () => {
-    var name = prompt('新建文件夹，请输入名称：');
+    var name = await showPrompt('新建文件夹', '', { placeholder: '请输入文件夹名称' });
     if (name === null) return;
     var trimmed = name.trim();
     if (!trimmed) { showToast('名称不能为空', 'warning'); return; }
@@ -5639,6 +7373,9 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.add('active');
       document.querySelectorAll('.settings-pane').forEach(p => p.classList.remove('active'));
       document.getElementById('sp-' + btn.dataset.pane).classList.add('active');
+      if (btn.dataset.pane === 'favorites') {
+        refreshFavoritesList(document.getElementById('fav-search-input').value.trim());
+      }
     });
   });
 
@@ -5702,7 +7439,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   // API 预设
-  document.getElementById('btn-save-api-preset').addEventListener('click', saveApiPreset);
+  document.getElementById('btn-manage-api-presets').addEventListener('click', openApiPresetModal);
+  document.getElementById('preset-modal-close').addEventListener('click', function() {
+    document.getElementById('preset-modal').classList.remove('open');
+  });
+  document.getElementById('preset-modal').addEventListener('click', function(e) {
+    if (e.target === document.getElementById('preset-modal')) {
+      document.getElementById('preset-modal').classList.remove('open');
+    }
+  });
   // API 格式切换
   document.querySelectorAll('input[name="apiFormat"]').forEach(radio => {
     radio.addEventListener('change', scheduleApiSave);
@@ -5749,25 +7494,8 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('字体已应用', 'success');
   });
 
-  document.getElementById('btn-save-font-preset').addEventListener('click', async () => {
-    const fontUrl = document.getElementById('custom-font-url').value.trim();
-    const fontName = document.getElementById('custom-font-name').value.trim();
-    if (!fontName) {
-      showToast('请先填写字体名称', 'warning');
-      return;
-    }
-    const presetName = prompt('为字体预设命名：', fontName);
-    if (!presetName || !presetName.trim()) return;
-    const preset = {
-      id: genId('fp'),
-      name: presetName.trim(),
-      url: fontUrl,
-      fontFamily: fontName
-    };
-    state.fontPresets.push(preset);
-    try { await db.setSetting('font_presets', state.fontPresets); } catch (_) {}
-    renderFontPresets();
-    showToast('字体预设已保存', 'success');
+  document.getElementById('btn-save-font-preset').addEventListener('click', function() {
+    openFontPresetModal();
   });
   document.getElementById('page-font-size').addEventListener('input', (e) => {
     const val = parseInt(e.target.value);
@@ -5843,10 +7571,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 手动添加核心记忆
   document.getElementById('btn-add-core').addEventListener('click', async () => {
-    const content = prompt('输入核心记忆内容：');
+    var title = await showPrompt('添加核心记忆 - 标题', '', { placeholder: '给这条记忆起个标题（方便管理）' });
+    if (title === null) return;
+    var content = await showPrompt('添加核心记忆 - 内容', '', { placeholder: '输入核心记忆内容', multiline: true });
     if (!content || !content.trim()) return;
-    const entry = {
+    var entry = {
       id: genId('core'),
+      title: (title || '').trim() || '未命名',
       content: content.trim(),
       createdAt: Date.now(),
       updatedAt: Date.now()
@@ -5863,10 +7594,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 手动添加长期记忆
   document.getElementById('btn-add-lt').addEventListener('click', async () => {
-    const summary = prompt('输入长期记忆内容：');
+    var ltTitle = await showPrompt('添加长期记忆 - 标题', '', { placeholder: '给这条记忆起个标题（方便管理）' });
+    if (ltTitle === null) return;
+    var summary = await showPrompt('添加长期记忆 - 内容', '', { placeholder: '输入长期记忆内容', multiline: true });
     if (!summary || !summary.trim()) return;
-    const entry = {
+    var entry = {
       id: genId('lt'),
+      title: (ltTitle || '').trim() || '未命名',
       summary: summary.trim(),
       coveredMsgIds: [],
       createdAt: Date.now(),
@@ -5913,6 +7647,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 数据管理
   document.getElementById('btn-clear-all').addEventListener('click', clearAllData);
   document.getElementById('btn-compress').addEventListener('click', compressData);
+  document.getElementById('btn-clear-messages').addEventListener('click', clearAllMessages);
   document.getElementById('btn-export').addEventListener('click', exportData);
   document.getElementById('btn-import').addEventListener('click', () => {
     document.getElementById('import-file').click();
@@ -5921,6 +7656,170 @@ document.addEventListener('DOMContentLoaded', () => {
     const file = e.target.files[0];
     if (file) importData(file);
     e.target.value = '';
+  });
+
+// 共读书 - 抽屉按钮
+  document.querySelector('[data-func="read-together"]').addEventListener('click', function() {
+    closeDrawer();
+    setTimeout(openBookshelf, 300);
+  });
+
+  // 书库弹窗
+  document.getElementById('bookshelf-close').addEventListener('click', closeBookshelf);
+  document.getElementById('bookshelf-modal').addEventListener('click', function(e) {
+    if (e.target === document.getElementById('bookshelf-modal')) closeBookshelf();
+  });
+  document.getElementById('btn-book-add').addEventListener('click', startBookUpload);
+  document.getElementById('book-file-input').addEventListener('change', function(e) {
+    var file = e.target.files[0];
+    if (file) handleBookFileSelected(file);
+    e.target.value = '';
+  });
+  document.getElementById('book-upload-confirm').addEventListener('click', confirmBookUpload);
+  document.getElementById('book-upload-cancel').addEventListener('click', cancelBookUpload);
+  document.getElementById('book-upload-modal').addEventListener('click', function(e) {
+    if (e.target === document.getElementById('book-upload-modal')) cancelBookUpload();
+  });
+
+  // 阅读浮窗
+  document.getElementById('reader-btn-close').addEventListener('click', closeReader);
+  document.getElementById('reader-btn-zoom').addEventListener('click', toggleReaderZoom);
+  // 阅读浮窗直接拖动（触摸header即可拖）
+  (function initReaderDrag() {
+    var floatEl = document.getElementById('reader-float');
+    var headerEl = floatEl.querySelector('.reader-header');
+    var isDragging = false;
+    var offsetX = 0;
+    var offsetY = 0;
+    var startX = 0;
+    var startY = 0;
+    var moved = false;
+
+    function onStart(e) {
+      if (e.target.closest('.btn-icon-sm') || e.target.closest('.reader-settings-panel') || e.target.closest('.reader-page-info')) return;
+      var touch = e.touches ? e.touches[0] : e;
+      startX = touch.clientX;
+      startY = touch.clientY;
+      moved = false;
+      var rect = floatEl.getBoundingClientRect();
+      offsetX = touch.clientX - rect.left;
+      offsetY = touch.clientY - rect.top;
+      isDragging = true;
+    }
+
+    function onMove(e) {
+      if (!isDragging) return;
+      var touch = e.touches ? e.touches[0] : e;
+      var dx = Math.abs(touch.clientX - startX);
+      var dy = Math.abs(touch.clientY - startY);
+      // 移动超过6px才开始真正拖拽，避免误触
+      if (!moved && dx < 6 && dy < 6) return;
+      if (!moved) {
+        moved = true;
+        floatEl.classList.add('dragging');
+        var rect = floatEl.getBoundingClientRect();
+        floatEl.style.position = 'fixed';
+        floatEl.style.left = rect.left + 'px';
+        floatEl.style.top = rect.top + 'px';
+        floatEl.style.right = 'auto';
+        floatEl.style.bottom = 'auto';
+        floatEl.style.width = rect.width + 'px';
+        floatEl.style.height = rect.height + 'px';
+        floatEl.style.margin = '0';
+      }
+      e.preventDefault();
+      var newLeft = touch.clientX - offsetX;
+      var newTop = touch.clientY - offsetY;
+      var vw = window.innerWidth;
+      var vh = window.innerHeight;
+      var fw = floatEl.offsetWidth;
+      var fh = floatEl.offsetHeight;
+      if (newLeft < 0) newLeft = 0;
+      if (newTop < 56) newTop = 56;
+      if (newLeft + fw > vw) newLeft = vw - fw;
+      if (newTop + fh > vh) newTop = vh - fh;
+      floatEl.style.left = newLeft + 'px';
+      floatEl.style.top = newTop + 'px';
+    }
+
+    function onEnd() {
+      if (isDragging && moved) {
+        floatEl.classList.remove('dragging');
+      }
+      isDragging = false;
+      moved = false;
+    }
+
+    headerEl.addEventListener('touchstart', onStart, { passive: true });
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onEnd);
+    document.addEventListener('touchcancel', onEnd);
+    headerEl.addEventListener('mousedown', onStart);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
+  })();
+  document.getElementById('reader-btn-settings').addEventListener('click', function() {
+    document.getElementById('reader-settings-panel').classList.toggle('open');
+  });
+  document.getElementById('reader-prev').addEventListener('click', function() {
+    if (state.readerState.currentPage > 1) {
+      state.readerState.currentPage--;
+      renderReaderPage();
+    }
+  });
+  document.getElementById('reader-next').addEventListener('click', function() {
+    var total = getReaderTotalPages();
+    if (state.readerState.currentPage < total) {
+      state.readerState.currentPage++;
+      renderReaderPage();
+    }
+  });
+  document.getElementById('reader-jump-go').addEventListener('click', function() {
+    var page = parseInt(document.getElementById('reader-jump-page').value);
+    var total = getReaderTotalPages();
+    if (isNaN(page) || page < 1) page = 1;
+    if (page > total) page = total;
+    state.readerState.currentPage = page;
+    renderReaderPage();
+  });
+  document.getElementById('reader-chars-per-page').addEventListener('change', function(e) {
+    var val = parseInt(e.target.value);
+    if (isNaN(val) || val < 100) val = 100;
+    if (val > 5000) val = 5000;
+    state.readerState.charsPerPage = val;
+    state.readerState.currentPage = 1;
+    renderReaderPage();
+  });
+  document.getElementById('reader-font-size').addEventListener('input', function(e) {
+    var val = parseInt(e.target.value);
+    state.readerState.fontSize = val;
+    document.getElementById('reader-font-size-val').textContent = val;
+    document.getElementById('reader-body').style.fontSize = val + 'px';
+    saveReaderProgress(state.readerState.currentBookId, state.readerState.currentPage);
+  });
+  document.getElementById('reader-letter-spacing').addEventListener('input', function(e) {
+    var val = parseFloat(e.target.value);
+    state.readerState.letterSpacing = val;
+    document.getElementById('reader-letter-spacing-val').textContent = val;
+    document.getElementById('reader-body').style.letterSpacing = val + 'em';
+    saveReaderProgress(state.readerState.currentBookId, state.readerState.currentPage);
+  });
+  document.getElementById('reader-line-height').addEventListener('input', function(e) {
+    var val = parseFloat(e.target.value);
+    state.readerState.lineHeight = val;
+    document.getElementById('reader-line-height-val').textContent = val;
+    document.getElementById('reader-body').style.lineHeight = String(val);
+    saveReaderProgress(state.readerState.currentBookId, state.readerState.currentPage);
+  });
+
+// 收藏夹搜索
+  document.getElementById('fav-search-input').addEventListener('input', function(e) {
+    refreshFavoritesList(e.target.value.trim());
+  });
+
+  // 聊天记录搜索
+  document.getElementById('chat-search-input').addEventListener('input', function(e) {
+    handleChatSearch(e.target.value);
   });
 
   // beforeunload 清理 blob URLs
