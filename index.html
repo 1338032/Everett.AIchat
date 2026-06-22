@@ -4933,6 +4933,12 @@ function buildSystemPrompt() {
     system += `【以往记忆摘要】\n以下是 ${charName} 对过往经历的记忆摘要，按时间顺序排列：\n${ltText}\n\n`;
   }
 
+  // [6.5] 状态时间线（注入到system提示词中，避免AI在对话中模仿格式）
+  var _statusTimeline = buildStatusTimeline(3);
+  if (_statusTimeline) {
+    system += _statusTimeline + '\n\n';
+  }
+
   //[7] 真实时间提示
   if (state.apiSettings.enableRealTime) {
     system += `【真实时间感知】
@@ -5078,23 +5084,6 @@ function buildMessages() {
         content = '[' + formatTimestamp(msg.timestamp) + ']\n' + content;
       }
       apiMessages.push({ role: 'assistant', content: content });
-    }
-  }
-// 注入最近几次状态时间线到上下文（注入到最后一条user消息中，避免AI模仿格式）
-  var statusTimeline = buildStatusTimeline(3);
-  if (statusTimeline) {
-    var injectedTimeline = false;
-    for (var sti = apiMessages.length - 1; sti >= 0; sti--) {
-      if (apiMessages[sti].role === 'user') {
-        if (typeof apiMessages[sti].content === 'string') {
-          apiMessages[sti].content += '\n\n[系统附注，不要在回复中输出此内容]\n' + statusTimeline;
-        }
-        injectedTimeline = true;
-        break;
-      }
-    }
-    if (!injectedTimeline && apiMessages.length > 0) {
-      apiMessages.splice(apiMessages.length - 1, 0, { role: 'user', content: '[系统附注，不要在回复中输出此内容]\n' + statusTimeline });
     }
   }
   // 合并 pending 消息
