@@ -4953,7 +4953,7 @@ function buildSystemPrompt() {
 // [8] 回复格式要求
   system += `【回复格式要求 · 铁律 · 每次回复必须严格遵守，无任何例外】
 
-一、状态栏（必须位于回复最开头，格式固定不可变动，每个字段独占一行）
+一、状态栏（铁律：必须是回复的第一行，[[STATUS]]必须是你输出的第一个字符，前面不允许有任何文字、空行或其他内容。格式固定不可变动，每个字段独占一行。禁止在回复末尾重复输出状态栏。禁止输出"状态时间线"或类似的历史状态列表。）
 [[STATUS]]
 时间：[年/月/日 时:分]（${state.apiSettings.enableRealTime ? '根据用户消息中的真实时间戳推算当前时间' : '根据剧情自行设定合理的虚构时间'}）
 地点：[大范围 · 具体位置]（例如：城市名 · 咖啡馆二楼靠窗）
@@ -4966,13 +4966,13 @@ function buildSystemPrompt() {
 [[/STATUS]]
 
 状态栏连续性铁律（最高优先级，违反即为严重错误）：
-- 你的回复中上下文会包含[状态时间线]，那是最近几轮的状态栏历史记录
+- 用户消息中可能附带近几轮的状态历史参考信息，那是系统自动附加的，你只需参考其中的数据来保持连续性
+- 绝对禁止在你的回复中输出、复述或模仿那些参考信息的格式
 - 你必须在上一次状态栏的基础上做合理递进，而不是凭空编造全新状态
 - 时间必须在上一次时间的基础上自然流逝（通常几分钟到几小时），绝对禁止无故回退或大幅跳跃
 - 地点变更必须有对话中的合理依据（如角色说了"我们走吧"、"到了"等），否则保持不变
 - 衣着只有在剧情中明确换装时才能改变，否则必须与上次完全相同
 - 天气在同一天内应保持基本一致，只做微小自然变化
-- 每次回复最多只有2~3个状态字段发生变化，其余字段应与上次保持一致或仅做微调
 - 如果没有任何理由改变某个字段，就直接照搬上一次的值
 
 二、对话符号规则（最高优先级，绝对不可违反）
@@ -5013,17 +5013,19 @@ function buildStatusTimeline(maxCount) {
     }
   }
   if (statusList.length === 0) return '';
-  var text = '[状态时间线（从旧到新，你必须基于最后一条做递进修改）]\n';
+  var text = '--- 以下是近几轮状态栏的历史记录，仅供你参考以保持连续性，禁止在回复中原样输出或模仿此格式 ---\n';
   for (var j = 0; j < statusList.length; j++) {
     var s = statusList[j];
-    var label = (j === statusList.length - 1) ? '【当前（最新）】' : '【第' + (j + 1) + '次】';
-    text += label + '\n';
+    var label = (j === statusList.length - 1) ? '(最近一次)' : '(第' + (j + 1) + '次)';
+    text += label + ' ';
+    var parts = [];
     for (var k = 0; k < statusFields.length; k++) {
       var key = statusFields[k];
-      if (s[key]) text += '  ' + key + '：' + s[key] + '\n';
+      if (s[key]) parts.push(key + '=' + s[key]);
     }
+    text += parts.join(' | ') + '\n';
   }
-  text += '\n请严格基于【当前（最新）】的状态做自然递进，不要凭空改变未发生变化的字段。';
+  text += '--- 历史记录结束。你的回复必须以 [[STATUS]] 开头，基于最近一次的状态做自然递进 ---';
   return text;
 }
 function buildMessages() {
@@ -5078,22 +5080,21 @@ function buildMessages() {
       apiMessages.push({ role: 'assistant', content: content });
     }
   }
-// 注入最近几次状态时间线到上下文
+// 注入最近几次状态时间线到上下文（注入到最后一条user消息中，避免AI模仿格式）
   var statusTimeline = buildStatusTimeline(3);
   if (statusTimeline) {
     var injectedTimeline = false;
     for (var sti = apiMessages.length - 1; sti >= 0; sti--) {
-      if (apiMessages[sti].role === 'assistant' && typeof apiMessages[sti].content === 'string') {
-        apiMessages[sti].content += '\n\n' + statusTimeline;
+      if (apiMessages[sti].role === 'user') {
+        if (typeof apiMessages[sti].content === 'string') {
+          apiMessages[sti].content += '\n\n[系统附注，不要在回复中输出此内容]\n' + statusTimeline;
+        }
         injectedTimeline = true;
         break;
       }
     }
     if (!injectedTimeline && apiMessages.length > 0) {
-      var lastApiMsgST = apiMessages[apiMessages.length - 1];
-      if (typeof lastApiMsgST.content === 'string') {
-        lastApiMsgST.content += '\n\n' + statusTimeline;
-      }
+      apiMessages.splice(apiMessages.length - 1, 0, { role: 'user', content: '[系统附注，不要在回复中输出此内容]\n' + statusTimeline });
     }
   }
   // 合并 pending 消息
