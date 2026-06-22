@@ -4235,53 +4235,195 @@ function updateChatPadding() {
   const barHeight = hasStatus ? 22 : 0;
   document.documentElement.style.setProperty('--statusbar-height', barHeight + 'px');
 }
-async function editStatusBar() {
-  var currentStatus = state.lastStatus || {};
-  var fields = ['时间', '地点', '天气', '衣着', '动作', '心情', '健康', '思绪'];
-  var lines = [];
-  for (var i = 0; i < fields.length; i++) {
-    var key = fields[i];
-    var val = currentStatus[key] || '';
-    lines.push(key + '：' + val);
-  }
-  var text = lines.join('\n');
-  var result = await showPrompt('编辑状态栏', text, {
-    multiline: true,
-    placeholder: '每行一个字段，格式：字段名：内容\n例如：\n时间：2024/12/01 14:30\n地点：咖啡馆',
-    description: '修改后将立即生效，格式为"字段名：内容"，每行一个'
-  });
-  if (result === null) return;
-  var newStatus = {};
-  var resultLines = result.split('\n');
-  for (var j = 0; j < resultLines.length; j++) {
-    var line = resultLines[j].trim();
-    if (!line) continue;
-    var sepIdx = line.indexOf('：');
-    if (sepIdx === -1) sepIdx = line.indexOf(':');
-    if (sepIdx === -1) continue;
-    var key2 = line.slice(0, sepIdx).trim();
-    var val2 = line.slice(sepIdx + 1).trim();
-    if (key2 && val2) newStatus[key2] = val2;
-  }
-  if (Object.keys(newStatus).length === 0) {
-    showToast('未解析到有效内容', 'warning');
-    return;
-  }
-  updateStatusBar(newStatus);
-  var lastAssistantMsg = null;
-  for (var k = state.messages.length - 1; k >= 0; k--) {
-    if (state.messages[k].role === 'assistant' && !state.messages[k].isWelcome) {
-      lastAssistantMsg = state.messages[k];
-      break;
+function collectRecentStatuses(maxCount) {
+  var result = [];
+  for (var i = state.messages.length - 1; i >= 0; i--) {
+    var msg = state.messages[i];
+    if (msg.role === 'assistant' && msg.status && !msg.isWelcome) {
+      result.unshift({ msgId: msg.id, msgIndex: i, status: msg.status, timestamp: msg.timestamp });
+      if (result.length >= maxCount) break;
     }
   }
-  if (lastAssistantMsg) {
-    lastAssistantMsg.status = newStatus;
-    try {
-      await db.updateMessage(lastAssistantMsg.id, { status: newStatus });
-    } catch (_) {}
+  return result;
+}
+
+async function editStatusBar() {
+  var recentStatuses = collectRecentStatuses(3);
+  if (recentStatuses.length === 0) {
+    showToast('还没有状态栏数据', 'warning');
+    return;
   }
-  showToast('状态栏已更新', 'success');
+  var fields = ['时间', '地点', '天气', '衣着', '动作', '心情', '健康', '思绪'];
+  var currentEditIndex = recentStatuses.length - 1;
+
+  function statusToText(statusObj) {
+    var lines = [];
+    for (var i = 0; i < fields.length; i++) {
+      lines.push(fields[i] + '：' + (statusObj[fields[i]] || ''));
+    }
+    return lines.join('\n');
+  }
+
+  function parseStatusText(text) {
+    var result = {};
+    var lines = text.split('\n');
+    for (var j = 0; j < lines.length; j++) {
+      var line = lines[j].trim();
+      if (!line) continue;
+      var sepIdx = line.indexOf('：');
+      if (sepIdx === -1) sepIdx = line.indexOf(':');
+      if (sepIdx === -1) continue;
+      var key = line.slice(0, sepIdx).trim();
+      var val = line.slice(sepIdx + 1).trim();
+      if (key && val) result[key] = val;
+    }
+    return result;
+  }
+
+  return new Promise(function(resolveMain) {
+    var modal = document.getElementById('prompt-modal');
+    var titleEl = document.getElementById('prompt-title');
+    var descEl = document.getElementById('prompt-desc');
+    var inputWrap = document.getElementById('prompt-input-wrap');
+    var textareaWrap = document.getElementById('prompt-textarea-wrap');
+    var textareaEl = document.getElementById('prompt-textarea');
+    var okBtn = document.getElementById('prompt-ok');
+    var cancelBtn = document.getElementById('prompt-cancel');
+
+    inputWrap.style.display = 'none';
+    textareaWrap.style.display = '';
+    textareaEl.style.minHeight = '180px';
+
+    var navBar = document.createElement('div');
+    navBar.id = 'status-edit-nav';
+    navBar.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px;';
+
+    var prevBtn = document.createElement('button');
+    prevBtn.className = 'btn-secondary';
+    prevBtn.style.cssText = 'padding:6px 14px;font-size:13px;min-width:80px;';
+    prevBtn.textContent = '← 上一条';
+
+    var pageInfo = document.createElement('span');
+    pageInfo.style.cssText = 'font-size:13px;color:var(--text-muted);min-width:60px;text-align:center;';
+
+    var nextBtn = document.createElement('button');
+    nextBtn.className = 'btn-secondary';
+    nextBtn.style.cssText = 'padding:6px 14px;font-size:13px;min-width:80px;';
+    nextBtn.textContent = '下一条 →';
+
+    navBar.appendChild(prevBtn);
+    navBar.appendChild(pageInfo);
+    navBar.appendChild(nextBtn);
+
+    var btnRow = okBtn.parentNode;
+    btnRow.parentNode.insertBefore(navBar, textareaWrap.nextSibling);
+
+    function renderCurrentPage() {
+      var entry = recentStatuses[currentEditIndex];
+      var totalCount = recentStatuses.length;
+      var isLatest = (currentEditIndex === totalCount - 1);
+      var labelNum = currentEditIndex + 1;
+
+      var title = '编辑状态栏';
+      if (totalCount > 1) {
+        title += '  ' + labelNum + '/' + totalCount;
+        title += isLatest ? ' [当前]' : ' [历史]';
+      }
+      titleEl.textContent = title;
+
+      var timeStr = entry.timestamp ? formatTimestamp(entry.timestamp) : '';
+      var desc = '';
+      if (timeStr) desc = '来自 ' + timeStr;
+      if (!isLatest) desc += (desc ? ' · ' : '') + '修改历史状态会影响AI对状态连续性的判断';
+      if (desc) {
+        descEl.textContent = desc;
+        descEl.style.display = '';
+      } else {
+        descEl.style.display = 'none';
+      }
+
+      textareaEl.value = statusToText(entry.status);
+      textareaEl.placeholder = '每行一个字段，格式：字段名：内容';
+
+      pageInfo.textContent = labelNum + ' / ' + totalCount;
+      prevBtn.disabled = (currentEditIndex <= 0);
+      nextBtn.disabled = (currentEditIndex >= totalCount - 1);
+      prevBtn.style.opacity = prevBtn.disabled ? '0.4' : '1';
+      nextBtn.style.opacity = nextBtn.disabled ? '0.4' : '1';
+
+      if (totalCount <= 1) {
+        navBar.style.display = 'none';
+      } else {
+        navBar.style.display = 'flex';
+      }
+    }
+
+    function saveCurrentPage() {
+      var text = textareaEl.value.trim();
+      if (!text) return false;
+      var newStatus = parseStatusText(text);
+      if (Object.keys(newStatus).length === 0) return false;
+      var entry = recentStatuses[currentEditIndex];
+      entry.status = newStatus;
+      var targetMsg = state.messages.find(function(m) { return m.id === entry.msgId; });
+      if (targetMsg) {
+        targetMsg.status = newStatus;
+        try { db.updateMessage(targetMsg.id, { status: newStatus }); } catch (_) {}
+      }
+      return true;
+    }
+
+    function onPrev() {
+      if (currentEditIndex <= 0) return;
+      saveCurrentPage();
+      currentEditIndex--;
+      renderCurrentPage();
+    }
+
+    function onNext() {
+      if (currentEditIndex >= recentStatuses.length - 1) return;
+      saveCurrentPage();
+      currentEditIndex++;
+      renderCurrentPage();
+    }
+
+    function cleanup() {
+      modal.classList.remove('open');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      prevBtn.removeEventListener('click', onPrev);
+      nextBtn.removeEventListener('click', onNext);
+      textareaEl.style.minHeight = '';
+      if (navBar.parentNode) navBar.parentNode.removeChild(navBar);
+    }
+
+    function onOk() {
+      var saved = saveCurrentPage();
+      if (!saved) {
+        showToast('未解析到有效内容', 'warning');
+        return;
+      }
+      var latestEntry = recentStatuses[recentStatuses.length - 1];
+      updateStatusBar(latestEntry.status);
+      cleanup();
+      showToast('状态栏已更新', 'success');
+      resolveMain();
+    }
+
+    function onCancel() {
+      cleanup();
+      resolveMain();
+    }
+
+    prevBtn.addEventListener('click', onPrev);
+    nextBtn.addEventListener('click', onNext);
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+
+    renderCurrentPage();
+    modal.classList.add('open');
+    setTimeout(function() { textareaEl.focus(); }, 100);
+  });
 }
 function toggleStatusDrawer() {
   state.statusDrawerOpen = !state.statusDrawerOpen;
@@ -4823,6 +4965,16 @@ function buildSystemPrompt() {
 思绪：[${charName}内心的真实想法，必须使用第一人称"我"，20~50字]
 [[/STATUS]]
 
+状态栏连续性铁律（最高优先级，违反即为严重错误）：
+- 你的回复中上下文会包含[状态时间线]，那是最近几轮的状态栏历史记录
+- 你必须在上一次状态栏的基础上做合理递进，而不是凭空编造全新状态
+- 时间必须在上一次时间的基础上自然流逝（通常几分钟到几小时），绝对禁止无故回退或大幅跳跃
+- 地点变更必须有对话中的合理依据（如角色说了"我们走吧"、"到了"等），否则保持不变
+- 衣着只有在剧情中明确换装时才能改变，否则必须与上次完全相同
+- 天气在同一天内应保持基本一致，只做微小自然变化
+- 每次回复最多只有2~3个状态字段发生变化，其余字段应与上次保持一致或仅做微调
+- 如果没有任何理由改变某个字段，就直接照搬上一次的值
+
 二、对话符号规则（最高优先级，绝对不可违反）
 - 凡是${charName}开口说出的话，无论长短，哪怕只有一个字，都必须且只能用「」包裹
 - 正确示例：
@@ -4850,7 +5002,30 @@ function buildSystemPrompt() {
 system = system.replace(/\{\{user\}\}/g, userName).replace(/\{\{char\}\}/g, charName);
   return system;
 }
-
+function buildStatusTimeline(maxCount) {
+  var statusList = [];
+  var statusFields = ['时间', '地点', '天气', '衣着', '健康', '动作', '心情', '思绪'];
+  for (var i = state.messages.length - 1; i >= 0; i--) {
+    var msg = state.messages[i];
+    if (msg.role === 'assistant' && msg.status && !msg.pending) {
+      statusList.unshift(msg.status);
+      if (statusList.length >= maxCount) break;
+    }
+  }
+  if (statusList.length === 0) return '';
+  var text = '[状态时间线（从旧到新，你必须基于最后一条做递进修改）]\n';
+  for (var j = 0; j < statusList.length; j++) {
+    var s = statusList[j];
+    var label = (j === statusList.length - 1) ? '【当前（最新）】' : '【第' + (j + 1) + '次】';
+    text += label + '\n';
+    for (var k = 0; k < statusFields.length; k++) {
+      var key = statusFields[k];
+      if (s[key]) text += '  ' + key + '：' + s[key] + '\n';
+    }
+  }
+  text += '\n请严格基于【当前（最新）】的状态做自然递进，不要凭空改变未发生变化的字段。';
+  return text;
+}
 function buildMessages() {
   const shortTurns = state.memorySettings.shortTermTurns;
   const nonWelcome = state.messages.filter(m => !m.isWelcome && !m.pending);
@@ -4903,25 +5078,21 @@ function buildMessages() {
       apiMessages.push({ role: 'assistant', content: content });
     }
   }
-// 注入最新人物状态到上下文
-  if (state.lastStatus) {
-    let statusText = '[当前角色状态]\n';
-    const statusKeys = ['地点', '天气', '衣着', '健康', '动作', '心情', '思绪'];
-    for (const key of statusKeys) {
-      if (state.lastStatus[key]) statusText += key + '：' + state.lastStatus[key] + '\n';
-    }
-    let injected = false;
-    for (let i = apiMessages.length - 1; i >= 0; i--) {
-      if (apiMessages[i].role === 'assistant') {
-        apiMessages[i].content += '\n\n' + statusText;
-        injected = true;
+// 注入最近几次状态时间线到上下文
+  var statusTimeline = buildStatusTimeline(3);
+  if (statusTimeline) {
+    var injectedTimeline = false;
+    for (var sti = apiMessages.length - 1; sti >= 0; sti--) {
+      if (apiMessages[sti].role === 'assistant' && typeof apiMessages[sti].content === 'string') {
+        apiMessages[sti].content += '\n\n' + statusTimeline;
+        injectedTimeline = true;
         break;
       }
     }
-    if (!injected && apiMessages.length > 0) {
-      const lastMsg = apiMessages[apiMessages.length - 1];
-      if (lastMsg.role === 'user') {
-        lastMsg.content += '\n\n' + statusText;
+    if (!injectedTimeline && apiMessages.length > 0) {
+      var lastApiMsgST = apiMessages[apiMessages.length - 1];
+      if (typeof lastApiMsgST.content === 'string') {
+        lastApiMsgST.content += '\n\n' + statusTimeline;
       }
     }
   }
