@@ -5645,14 +5645,24 @@ async function checkMemoryTrigger() {
 
   if (trigger <= 0 || turns <= 0 || turns % trigger !== 0) return;
 
-  triggerMemorySummary().then(function() {
-    state.memorySettings._lastSummaryTurn = turns;
-    state.memorySettings._lastSummaryTime = Date.now();
-    db.setSetting('settings_memory', state.memorySettings).catch(function() {});
-    showToast('记忆已自动总结（第 ' + state.longTermMemory.length + ' 条）', 'success', 4000);
-  }).catch(function(err) {
+  // 避免重复触发同一轮
+  var lastSummaryTurn = state.memorySettings._lastSummaryTurn || 0;
+  if (turns <= lastSummaryTurn) return;
+
+  try {
+    var confirmed = await triggerMemorySummary();
+    // 只有用户确认写入时，才更新已总结轮数
+    if (confirmed === true) {
+      state.memorySettings._lastSummaryTurn = turns;
+      state.memorySettings._lastSummaryTime = Date.now();
+      await db.setSetting('settings_memory', state.memorySettings);
+      showToast('记忆已写入（第 ' + state.longTermMemory.length + ' 条）', 'success', 4000);
+    }
+    // 如果 confirmed === false（用户废弃），不更新 _lastSummaryTurn
+    // 这样下次对话时如果轮数满足条件，还会重新触发总结
+  } catch (err) {
     console.error('记忆总结失败:', err);
-  });
+  }
 }
 
 async function triggerMemorySummary() {
@@ -5664,11 +5674,11 @@ async function triggerMemorySummary() {
   var trigger = state.memorySettings.summaryTriggerTurns;
   var nonWelcome = state.messages.filter(function(m) { return !m.isWelcome && !m.pending; });
   var lastTurn = state.memorySettings._lastSummaryTurn || 0;
-var assistantOnly = nonWelcome.filter(function(m) { return m.role === 'assistant'; });
-var newTurns = assistantOnly.length - lastTurn;
-if (newTurns <= 0) return;
-var sliceCount = newTurns * 2;
-var toSummarize = nonWelcome.slice(-sliceCount);
+  var assistantOnly = nonWelcome.filter(function(m) { return m.role === 'assistant'; });
+  var newTurns = assistantOnly.length - lastTurn;
+  if (newTurns <= 0) return;
+  var sliceCount = newTurns * 2;
+  var toSummarize = nonWelcome.slice(-sliceCount);
 
   if (toSummarize.length === 0) return;
 
@@ -5770,46 +5780,154 @@ var toSummarize = nonWelcome.slice(-sliceCount);
     }
     if (!content) return;
 
+    // 解析出长期记忆和核心记忆
     var summary = content;
+    var coreLines = [];
     var coreMarkerIdx = content.indexOf('[[CORE]]');
 
     if (coreMarkerIdx !== -1 && state.memorySettings.coreMemoryEnabled) {
       summary = content.slice(0, coreMarkerIdx).trim();
       var coreSection = content.slice(coreMarkerIdx + '[[CORE]]'.length).trim();
-      var coreLines = coreSection.split('\n');
-      for (var ci = 0; ci < coreLines.length; ci++) {
-        var trimmed = coreLines[ci].replace(/^[-·•]\s*/, '').trim();
+      var rawCoreLines = coreSection.split('\n');
+      for (var ci = 0; ci < rawCoreLines.length; ci++) {
+        var trimmed = rawCoreLines[ci].replace(/^[-·•]\s*/, '').trim();
         if (trimmed) {
-          var coreEntry = {
-            id: genId('core'),
-            title: trimmed.length > 15 ? trimmed.slice(0, 15) + '...' : trimmed,
-            content: trimmed,
-            createdAt: Date.now(),
-            updatedAt: Date.now()
-          };
-          state.coreMemory.push(coreEntry);
-          await db.addCoreMemory(coreEntry);
+          coreLines.push(trimmed);
         }
       }
     }
 
-    if (summary) {
-      var autoTitle = summary.length > 20 ? summary.slice(0, 20) + '...' : summary;
-      var ltEntry = {
-        id: genId('lt'),
-        title: autoTitle,
-        summary: summary,
-        coveredMsgIds: toSummarize.map(function(m) { return m.id; }),
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
-      state.longTermMemory.push(ltEntry);
-      await db.addLongTermMemory(ltEntry);
-    }
+    if (!summary) return;
+
+    // 弹窗确认，而不是直接写入
+    var confirmed = await showMemorySummaryConfirm(summary, coreLines, toSummarize);
+    return confirmed;
 
   } catch (err) {
     console.error('记忆总结请求失败:', err);
   }
+}
+
+function showMemorySummaryConfirm(summary, coreLines, coveredMessages) {
+  return new Promise(function(resolve) {
+    var modal = document.getElementById('prompt-modal');
+    var titleEl = document.getElementById('prompt-title');
+    var descEl = document.getElementById('prompt-desc');
+    var inputWrap = document.getElementById('prompt-input-wrap');
+    var textareaWrap = document.getElementById('prompt-textarea-wrap');
+    var textareaEl = document.getElementById('prompt-textarea');
+    var okBtn = document.getElementById('prompt-ok');
+    var cancelBtn = document.getElementById('prompt-cancel');
+
+    titleEl.textContent = '记忆总结预览';
+
+    var descText = '以下是 AI 生成的记忆总结，你可以直接编辑修改。';
+    if (coreLines.length > 0) {
+      descText += '\n核心记忆（' + coreLines.length + '条）会在长期记忆下方以「[[CORE]]」分隔显示，也可编辑。';
+    }
+    descText += '\n\n点击「确认」写入记忆，点击「废弃」则不写入，对话轮数也不计入已总结。';
+    descEl.textContent = descText;
+    descEl.style.display = '';
+    descEl.style.whiteSpace = 'pre-wrap';
+
+    inputWrap.style.display = 'none';
+    textareaWrap.style.display = '';
+    textareaEl.style.minHeight = '200px';
+
+    // 组装编辑内容：长期记忆 + 核心记忆
+    var editContent = summary;
+    if (coreLines.length > 0) {
+      editContent += '\n\n[[CORE]]\n' + coreLines.join('\n');
+    }
+    textareaEl.value = editContent;
+    textareaEl.placeholder = '编辑记忆总结内容...';
+
+    // 修改按钮文字
+    okBtn.textContent = '确认写入';
+    cancelBtn.textContent = '废弃';
+
+    modal.classList.add('open');
+    setTimeout(function() { textareaEl.focus(); }, 100);
+
+    function cleanup() {
+      modal.classList.remove('open');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      textareaEl.style.minHeight = '';
+      descEl.style.whiteSpace = '';
+      // 恢复按钮文字
+      okBtn.textContent = '确认';
+      cancelBtn.textContent = '取消';
+    }
+
+    var onOk = async function() {
+      var editedText = textareaEl.value.trim();
+      if (!editedText) {
+        showToast('内容为空，已废弃', 'warning');
+        cleanup();
+        resolve(false);
+        return;
+      }
+
+      // 重新解析编辑后的内容
+      var editedSummary = editedText;
+      var editedCoreLines = [];
+      var editedCoreIdx = editedText.indexOf('[[CORE]]');
+
+      if (editedCoreIdx !== -1 && state.memorySettings.coreMemoryEnabled) {
+        editedSummary = editedText.slice(0, editedCoreIdx).trim();
+        var editedCoreSection = editedText.slice(editedCoreIdx + '[[CORE]]'.length).trim();
+        var editedRawLines = editedCoreSection.split('\n');
+        for (var eci = 0; eci < editedRawLines.length; eci++) {
+          var ecTrimmed = editedRawLines[eci].replace(/^[-·•]\s*/, '').trim();
+          if (ecTrimmed) {
+            editedCoreLines.push(ecTrimmed);
+          }
+        }
+      }
+
+      // 写入长期记忆
+      if (editedSummary) {
+        var autoTitle = editedSummary.length > 20 ? editedSummary.slice(0, 20) + '...' : editedSummary;
+        var ltEntry = {
+          id: genId('lt'),
+          title: autoTitle,
+          summary: editedSummary,
+          coveredMsgIds: coveredMessages.map(function(m) { return m.id; }),
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+        state.longTermMemory.push(ltEntry);
+        try { await db.addLongTermMemory(ltEntry); } catch (_) {}
+      }
+
+      // 写入核心记忆
+      for (var wci = 0; wci < editedCoreLines.length; wci++) {
+        var coreText = editedCoreLines[wci];
+        var coreEntry = {
+          id: genId('core'),
+          title: coreText.length > 15 ? coreText.slice(0, 15) + '...' : coreText,
+          content: coreText,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+        state.coreMemory.push(coreEntry);
+        try { await db.addCoreMemory(coreEntry); } catch (_) {}
+      }
+
+      cleanup();
+      resolve(true);
+    };
+
+    var onCancel = function() {
+      cleanup();
+      showToast('已废弃本次记忆总结，对话轮数不计入已总结', 'warning', 4000);
+      resolve(false);
+    };
+
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+  });
 }
 
 // ══════════════════════════════════════════════════════
@@ -8250,14 +8368,19 @@ async function manualTriggerSummary() {
   btn.disabled = true;
   btn.innerHTML = '<span>正在总结...</span>';
   try {
-    await triggerMemorySummary();
-    state.memorySettings._lastSummaryTurn = totalAssistantForManual;
-    state.memorySettings._lastSummaryTime = Date.now();
-    await db.setSetting('settings_memory', state.memorySettings);
-    refreshMemorySummaryInfo();
-    refreshLTMemList();
-    refreshCoreMemList();
-    showToast('记忆总结完成', 'success');
+    var confirmed = await triggerMemorySummary();
+    if (confirmed === true) {
+      state.memorySettings._lastSummaryTurn = totalAssistantForManual;
+      state.memorySettings._lastSummaryTime = Date.now();
+      await db.setSetting('settings_memory', state.memorySettings);
+      refreshMemorySummaryInfo();
+      refreshLTMemList();
+      refreshCoreMemList();
+      showToast('记忆总结已写入', 'success');
+    } else {
+      // 用户废弃，不更新轮数
+      refreshMemorySummaryInfo();
+    }
   } catch (err) {
     showToast('记忆总结失败: ' + err.message, 'error');
   } finally {
