@@ -1635,6 +1635,105 @@ a { color:inherit; text-decoration:none; }
 .cleanup-chip.danger:hover {
   background:rgba(197,48,48,0.08);
 }
+/* ══════════════════════════════════════════════════════
+   快捷短语胶囊栏
+   ══════════════════════════════════════════════════════ */
+#quick-phrase-bar {
+  position:fixed; bottom:68px; left:0; right:0; z-index:79;
+  display:none;
+  overflow:hidden;
+  pointer-events:none;
+}
+#quick-phrase-bar.has-phrases { display:block; }
+#quick-phrase-scroll {
+  display:flex; align-items:center;
+  gap:8px; padding:4px 16px 6px;
+  overflow-x:auto; overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  max-width:680px; margin:0 auto;
+  pointer-events:auto;
+}
+#quick-phrase-scroll::-webkit-scrollbar { display:none; }
+.qp-chip {
+  flex-shrink:0;
+  padding:5px 14px;
+  border-radius:var(--radius-full);
+  font-size:12px;
+  border:1px solid var(--border);
+  background:var(--bg-surface);
+  color:var(--text-secondary);
+  cursor:pointer;
+  transition:background 150ms, border-color 150ms, transform 100ms, box-shadow 150ms;
+  white-space:nowrap;
+  user-select:none;
+  -webkit-user-select:none;
+  max-width:120px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  box-shadow:0 1px 4px rgba(0,0,0,0.06);
+}
+.qp-chip:hover { background:var(--bg-hover); border-color:var(--text-muted); }
+.qp-chip:active { transform:scale(0.93); }
+.qp-chip.qp-sort-active {
+  outline:2px solid var(--pine);
+  outline-offset:1px;
+  background:var(--pine-pale) !important;
+  border-color:var(--pine);
+}
+#quick-phrase-scroll.qp-sorting .qp-chip {
+  animation:qpSortPulse 1.2s ease-in-out infinite;
+}
+#quick-phrase-scroll.qp-sorting .qp-chip.qp-sort-active {
+  animation:none;
+}
+@keyframes qpSortPulse {
+  0%,100% { opacity:0.7; }
+  50% { opacity:1; }
+}
+[data-frosted="true"] .qp-chip {
+  background:color-mix(in srgb, var(--bg-surface) 70%, transparent) !important;
+  backdrop-filter:blur(12px) saturate(1.3);
+  -webkit-backdrop-filter:blur(12px) saturate(1.3);
+  border-color:rgba(255,255,255,0.15);
+}
+[data-frosted="true"][data-theme="dark"] .qp-chip {
+  border-color:rgba(255,255,255,0.08);
+}
+/* 快捷短语设置区 */
+.qp-item {
+  display:flex; align-items:center; gap:8px;
+  padding:10px 12px;
+  border:1px solid var(--border); border-radius:var(--radius-sm);
+  margin-bottom:8px; background:var(--bg-input);
+  transition:background 150ms, border-color 150ms;
+}
+.qp-item .qp-title {
+  flex:1; font-size:14px; color:var(--text-primary);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.qp-item .qp-preview {
+  font-size:12px; color:var(--text-muted);
+  max-width:120px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  flex-shrink:0;
+}
+.qp-item.qp-list-sort-active {
+  outline:2px solid var(--pine);
+  outline-offset:2px;
+  background:var(--pine-pale) !important;
+  border-color:var(--pine);
+}
+.qp-sort-bar {
+  position:sticky; top:0; z-index:5;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 12px;
+  background:var(--pine-pale);
+  border:1px solid var(--pine);
+  border-radius:var(--radius-sm);
+  margin-bottom:12px;
+  font-size:13px; color:var(--pine);
+}
 /* 短期记忆展开 */
 .short-term-preview {
   border:1px solid var(--border); border-radius:var(--radius-sm);
@@ -2184,6 +2283,10 @@ a { color:inherit; text-decoration:none; }
   <button id="scroll-bottom-btn" title="回到底部">
     <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
   </button>
+  <!-- 快捷短语胶囊栏 -->
+<div id="quick-phrase-bar">
+  <div id="quick-phrase-scroll"></div>
+</div>
   <!-- 输入区 -->
   <div id="input-wrap">
     <div id="input-area">
@@ -2457,6 +2560,7 @@ a { color:inherit; text-decoration:none; }
         <button class="settings-nav-btn" data-pane="page">页面设置</button>
         <button class="settings-nav-btn" data-pane="emojis">表情包</button>
         <button class="settings-nav-btn" data-pane="memory">记忆区</button>
+        <button class="settings-nav-btn" data-pane="phrases">快捷短语</button>
         <button class="settings-nav-btn" data-pane="favorites">收藏夹</button>
         <button class="settings-nav-btn" data-pane="search">聊天记录</button>
       </nav>
@@ -2495,6 +2599,10 @@ a { color:inherit; text-decoration:none; }
                 <div class="data-stat-item">
                   <span class="data-stat-label">书库</span>
                   <span class="data-stat-value" id="ds-books">0 本</span>
+                </div>
+                <div class="data-stat-item">
+                  <span class="data-stat-label">快捷短语</span>
+                  <span class="data-stat-value" id="ds-phrases">0 条</span>
                 </div>
                 <div class="data-stat-item">
                   <span class="data-stat-label">图片/缓存</span>
@@ -2853,6 +2961,21 @@ a { color:inherit; text-decoration:none; }
             <p class="desc" id="short-term-info">当前窗口：最近 0 轮对话</p>
             <button class="btn-secondary" id="btn-view-short">查看</button>
             <div class="short-term-preview" id="short-term-preview" style="display:none"></div>
+          </div>
+        </div>
+        <!-- 快捷短语 -->
+        <div class="settings-pane" id="sp-phrases">
+          <div class="settings-section">
+            <h3>快捷短语管理</h3>
+            <p class="desc">创建常用短语，聊天时一键快速输入。长按胶囊栏可调整顺序。</p>
+            <div style="margin-bottom:12px">
+              <button class="btn-primary" id="btn-add-phrase" style="padding:6px 12px">
+                <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;stroke-width:2;fill:none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                新建短语
+              </button>
+            </div>
+            <div id="qp-list"></div>
+            <div id="qp-empty" class="emoji-empty">还没有快捷短语，点击上方按钮添加</div>
           </div>
         </div>
         <!-- 收藏夹 -->
@@ -4462,49 +4585,41 @@ async function editStatusBar() {
         showToast('请先在设置中填写 API 密钥', 'warning');
         return;
       }
-      // 先关闭当前弹窗，弹出输入框
-      modal.classList.remove('open');
+      // 彻底关闭编辑弹窗，释放所有按钮事件
+      cleanup();
+
+      // 此时弹窗已完全关闭，可以安全使用 showPrompt
       var userReq = await showPrompt('状态栏重置', '', {
         placeholder: '可选：输入额外要求（如时间设定、穿着等），留空则纯粹根据上下文重置',
         description: '重置会让 AI 根据最近对话重新生成全部状态栏字段。\n如果你有特定要求（比如"时间设为下午三点"、"穿着改为校服"），请在下方输入，AI 会优先满足。'
       });
       if (userReq === null) {
-        // 用户取消了，重新打开编辑弹窗并重新绑定事件
-        modal.classList.add('open');
-        okBtn.addEventListener('click', onOk);
-        cancelBtn.addEventListener('click', onCancel);
-        prevBtn.addEventListener('click', onPrev);
-        nextBtn.addEventListener('click', onNext);
+        // 用户取消了，重新启动编辑流程
+        resolveMain();
+        editStatusBar();
         return;
       }
-      // 显示进度
-      modal.classList.add('open');
-      resetBtn.disabled = true;
-      resetBtn.textContent = '重置中...';
+      // 用户确认了，执行重置
+      showToast('正在重置状态栏...', 'warning', 8000);
       try {
         var result = await regenerateStatusBar(userReq);
         if (result) {
-          cleanup();
-          if (resetBtn.parentNode) resetBtn.parentNode.removeChild(resetBtn);
           showToast('状态栏已重置', 'success');
-          resolveMain();
         } else {
-          resetBtn.disabled = false;
-          resetBtn.textContent = '重置';
+          showToast('重置未完成', 'warning');
         }
       } catch (err) {
-        resetBtn.disabled = false;
-        resetBtn.textContent = '重置';
         showToast('重置失败: ' + err.message, 'error');
       }
+      resolveMain();
     };
     resetBtn.addEventListener('click', onReset);
 
     var _cleanedUp = false;
     var origCleanup = cleanup;
     cleanup = function() {
-      if (_cleanedUp) return;
-      _cleanedUp = true;
+      if (cleanup._done) return;
+      cleanup._done = true;
       resetBtn.removeEventListener('click', onReset);
       if (resetBtn.parentNode) resetBtn.parentNode.removeChild(resetBtn);
       origCleanup();
@@ -9516,6 +9631,7 @@ async function refreshDataStats() {
     document.getElementById('ds-emojis').textContent = emojis.length + ' 个';
     document.getElementById('ds-favorites').textContent = favs.length + ' 条';
     document.getElementById('ds-books').textContent = books.length + ' 本 (' + formatBytes(bookSize) + ')';
+    document.getElementById('ds-phrases').textContent = state.quickPhrases.length + ' 条';
     document.getElementById('ds-blobs').textContent = blobCount + ' 项 (' + formatBytes(blobSize) + ')';
     document.getElementById('ds-total').textContent = formatBytes(totalSize);
 
@@ -10243,6 +10359,7 @@ setSplashProgress(75);
     const savedFontPresets = await db.getSetting('font_presets');
     if (savedFontPresets) state.fontPresets = savedFontPresets;
     if (savedPresets) state.apiPresets = savedPresets;
+    try { await loadQuickPhrases(); } catch (_) {}
 setSplashProgress(90);
     // 恢复最后状态
     for (let i = state.messages.length - 1; i >= 0; i--) {
@@ -10542,6 +10659,9 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('sp-' + btn.dataset.pane).classList.add('active');
       if (btn.dataset.pane === 'favorites') {
         refreshFavoritesList(document.getElementById('fav-search-input').value.trim());
+      }
+      if (btn.dataset.pane === 'phrases') {
+        refreshQuickPhraseList();
       }
     });
   });
@@ -11068,12 +11188,433 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('chat-search-input').addEventListener('input', function(e) {
     handleChatSearch(e.target.value);
   });
-
+// 快捷短语
+  document.getElementById('btn-add-phrase').addEventListener('click', addQuickPhrase);
   // beforeunload 清理 blob URLs
   window.addEventListener('beforeunload', () => {
     db.revokeAll();
   });
 });
+// ══════════════════════════════════════════════════════
+// 快捷短语系统
+// ══════════════════════════════════════════════════════
+state.quickPhrases = [];
+
+var _qpBarSortMode = false;
+var _qpBarSortFirstIdx = -1;
+var _qpBarExitHandler = null;
+
+var _qpListSortMode = false;
+var _qpListSortFirstId = null;
+
+async function loadQuickPhrases() {
+  try {
+    var saved = await db.getSetting('quick_phrases');
+    if (saved && Array.isArray(saved)) {
+      state.quickPhrases = saved;
+    }
+  } catch (_) {}
+  renderQuickPhraseBar();
+}
+
+async function saveQuickPhrases() {
+  try {
+    await db.setSetting('quick_phrases', state.quickPhrases);
+  } catch (_) {}
+}
+
+async function addQuickPhrase() {
+  var title = await showPrompt('新建快捷短语 - 标题', '', {
+    placeholder: '胶囊栏显示的标题（简短）'
+  });
+  if (title === null) return;
+  title = title.trim();
+  if (!title) { showToast('标题不能为空', 'warning'); return; }
+
+  var content = await showPrompt('新建快捷短语 - 内容', '', {
+    placeholder: '点击胶囊后填入输入框的文字',
+    multiline: true
+  });
+  if (content === null) return;
+  content = content.trim();
+  if (!content) { showToast('内容不能为空', 'warning'); return; }
+
+  var phrase = {
+    id: genId('qp'),
+    title: title,
+    content: content,
+    createdAt: Date.now()
+  };
+  state.quickPhrases.push(phrase);
+  await saveQuickPhrases();
+  refreshQuickPhraseList();
+  renderQuickPhraseBar();
+  showToast('短语已添加', 'success');
+}
+
+// ── 胶囊栏渲染 ──
+function renderQuickPhraseBar() {
+  var bar = document.getElementById('quick-phrase-bar');
+  var scroll = document.getElementById('quick-phrase-scroll');
+  if (!bar || !scroll) return;
+
+  // 先退出排序模式
+  exitQpBarSortMode();
+
+  // 移除旧的事件代理（通过重建 scroll 内容实现）
+  scroll.innerHTML = '';
+
+  if (state.quickPhrases.length === 0) {
+    bar.classList.remove('has-phrases');
+    updateQuickPhraseLayout();
+    return;
+  }
+
+  bar.classList.add('has-phrases');
+  var html = '';
+  for (var i = 0; i < state.quickPhrases.length; i++) {
+    var p = state.quickPhrases[i];
+    html += '<div class="qp-chip" data-qp-idx="' + i + '" title="' + escapeHtml(p.content) + '">' + escapeHtml(p.title) + '</div>';
+  }
+  scroll.innerHTML = html;
+  updateQuickPhraseLayout();
+}
+
+function updateQuickPhraseLayout() {
+  var bar = document.getElementById('quick-phrase-bar');
+  var hasBar = bar && bar.classList.contains('has-phrases');
+  var barHeight = hasBar ? 40 : 0;
+
+  var chatArea = document.getElementById('chat-area');
+  if (chatArea) {
+    chatArea.style.paddingBottom = (100 + barHeight) + 'px';
+  }
+  var scrollBtn = document.getElementById('scroll-bottom-btn');
+  if (scrollBtn) {
+    scrollBtn.style.bottom = (80 + barHeight) + 'px';
+  }
+}
+
+// ── 胶囊栏事件（使用事件代理，只绑一次） ──
+(function initQuickPhraseBarEvents() {
+  var scroll = document.getElementById('quick-phrase-scroll');
+  if (!scroll) return;
+
+  var longPressTimer = null;
+
+  // 点击代理
+  scroll.addEventListener('click', function(e) {
+    var chip = e.target.closest('.qp-chip');
+    if (!chip) return;
+
+    var idx = parseInt(chip.dataset.qpIdx);
+    if (isNaN(idx)) return;
+
+    // 排序模式
+    if (_qpBarSortMode) {
+      handleQpBarSortClick(idx);
+      return;
+    }
+
+    // 正常点击：填入输入框
+    var phrase = state.quickPhrases[idx];
+    if (!phrase) return;
+    var input = document.getElementById('chat-input');
+    if (!input) return;
+    var cursorPos = input.selectionStart;
+    if (cursorPos === undefined || cursorPos === null) cursorPos = input.value.length;
+    var before = input.value.slice(0, cursorPos);
+    var after = input.value.slice(cursorPos);
+    input.value = before + phrase.content + after;
+    autoResizeInput();
+    updateSendButton();
+    input.focus();
+    var newPos = cursorPos + phrase.content.length;
+    try { input.setSelectionRange(newPos, newPos); } catch (_) {}
+  });
+
+  // 长按排序
+  scroll.addEventListener('pointerdown', function(e) {
+    if (_qpBarSortMode) return;
+    var chip = e.target.closest('.qp-chip');
+    if (!chip) return;
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    longPressTimer = setTimeout(function() {
+      longPressTimer = null;
+      enterQpBarSortMode();
+    }, 600);
+  });
+
+  scroll.addEventListener('pointerup', function() {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  });
+
+  scroll.addEventListener('pointermove', function(e) {
+    if (longPressTimer && (Math.abs(e.movementX) > 5 || Math.abs(e.movementY) > 5)) {
+      clearTimeout(longPressTimer); longPressTimer = null;
+    }
+  });
+
+  scroll.addEventListener('pointercancel', function() {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  });
+
+  // 阻止长按默认菜单
+  scroll.addEventListener('contextmenu', function(e) {
+    if (_qpBarSortMode) e.preventDefault();
+  });
+})();
+
+// ── 胶囊栏排序 ──
+function enterQpBarSortMode() {
+  if (state.quickPhrases.length < 2) {
+    showToast('至少需要2个短语才能排序', 'warning');
+    return;
+  }
+  _qpBarSortMode = true;
+  _qpBarSortFirstIdx = -1;
+
+  var scroll = document.getElementById('quick-phrase-scroll');
+  if (scroll) scroll.classList.add('qp-sorting');
+
+  showToast('排序模式：点选两个胶囊交换位置，点空白处退出', 'warning', 4000);
+
+  // 延迟注册退出监听，避免和触发长按的事件冲突
+  if (_qpBarExitHandler) {
+    document.removeEventListener('pointerdown', _qpBarExitHandler, true);
+    _qpBarExitHandler = null;
+  }
+  _qpBarExitHandler = function(e) {
+    if (e.target.closest('#quick-phrase-scroll')) return;
+    exitQpBarSortMode();
+  };
+  setTimeout(function() {
+    document.addEventListener('pointerdown', _qpBarExitHandler, true);
+  }, 300);
+}
+
+function exitQpBarSortMode() {
+  _qpBarSortMode = false;
+  _qpBarSortFirstIdx = -1;
+
+  if (_qpBarExitHandler) {
+    document.removeEventListener('pointerdown', _qpBarExitHandler, true);
+    _qpBarExitHandler = null;
+  }
+
+  var scroll = document.getElementById('quick-phrase-scroll');
+  if (scroll) {
+    scroll.classList.remove('qp-sorting');
+    scroll.querySelectorAll('.qp-chip').forEach(function(c) {
+      c.classList.remove('qp-sort-active');
+    });
+  }
+}
+
+function handleQpBarSortClick(idx) {
+  if (idx < 0 || idx >= state.quickPhrases.length) return;
+  var scroll = document.getElementById('quick-phrase-scroll');
+  var chips = scroll ? scroll.querySelectorAll('.qp-chip') : [];
+
+  // 第一次选择
+  if (_qpBarSortFirstIdx < 0) {
+    _qpBarSortFirstIdx = idx;
+    chips.forEach(function(c) { c.classList.remove('qp-sort-active'); });
+    if (chips[idx]) chips[idx].classList.add('qp-sort-active');
+    return;
+  }
+
+  // 点同一个取消
+  if (_qpBarSortFirstIdx === idx) {
+    _qpBarSortFirstIdx = -1;
+    chips.forEach(function(c) { c.classList.remove('qp-sort-active'); });
+    return;
+  }
+
+  // 交换
+  var temp = state.quickPhrases[_qpBarSortFirstIdx];
+  state.quickPhrases[_qpBarSortFirstIdx] = state.quickPhrases[idx];
+  state.quickPhrases[idx] = temp;
+  saveQuickPhrases();
+  exitQpBarSortMode();
+  renderQuickPhraseBar();
+  showToast('已交换位置', 'success');
+}
+
+// ── 设置面板列表 ──
+function refreshQuickPhraseList() {
+  var listEl = document.getElementById('qp-list');
+  var emptyEl = document.getElementById('qp-empty');
+  if (!listEl || !emptyEl) return;
+
+  // 退出列表排序模式
+  _qpListSortMode = false;
+  _qpListSortFirstId = null;
+
+  if (state.quickPhrases.length === 0) {
+    listEl.innerHTML = '';
+    emptyEl.style.display = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  var html = '';
+  for (var i = 0; i < state.quickPhrases.length; i++) {
+    var p = state.quickPhrases[i];
+    var preview = p.content.length > 30 ? p.content.slice(0, 30) + '...' : p.content;
+    html += '<div class="qp-item" data-qp-id="' + p.id + '">';
+    html += '<span class="qp-title">' + escapeHtml(p.title) + '</span>';
+    html += '<span class="qp-preview">' + escapeHtml(preview) + '</span>';
+    html += '<button class="btn-icon-sm" data-qp-edit="' + p.id + '" title="编辑"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>';
+    html += '<button class="btn-icon-sm" data-qp-del="' + p.id + '" title="删除"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>';
+    html += '</div>';
+  }
+  listEl.innerHTML = html;
+
+  // 编辑
+  listEl.querySelectorAll('[data-qp-edit]').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var id = btn.dataset.qpEdit;
+      var phrase = state.quickPhrases.find(function(p) { return p.id === id; });
+      if (!phrase) return;
+
+      var newTitle = await showPrompt('编辑短语标题', phrase.title);
+      if (newTitle === null) return;
+      newTitle = newTitle.trim();
+      if (!newTitle) { showToast('标题不能为空', 'warning'); return; }
+
+      var newContent = await showPrompt('编辑短语内容', phrase.content, { multiline: true });
+      if (newContent === null) return;
+      newContent = newContent.trim();
+      if (!newContent) { showToast('内容不能为空', 'warning'); return; }
+
+      phrase.title = newTitle;
+      phrase.content = newContent;
+      await saveQuickPhrases();
+      refreshQuickPhraseList();
+      renderQuickPhraseBar();
+      showToast('已更新', 'success');
+    });
+  });
+
+  // 删除
+  listEl.querySelectorAll('[data-qp-del]').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var id = btn.dataset.qpDel;
+      var confirmed = await showConfirm('确认删除此快捷短语？', true);
+      if (!confirmed) return;
+      state.quickPhrases = state.quickPhrases.filter(function(p) { return p.id !== id; });
+      await saveQuickPhrases();
+      refreshQuickPhraseList();
+      renderQuickPhraseBar();
+      showToast('已删除', 'success');
+    });
+  });
+}
+
+// ── 设置面板列表排序（长按触发） ──
+(function initQpListSortEvents() {
+  var listEl = document.getElementById('qp-list');
+  if (!listEl) return;
+  var timer = null;
+
+  listEl.addEventListener('pointerdown', function(e) {
+    if (_qpListSortMode) return;
+    if (e.target.closest('.btn-icon-sm')) return;
+    var item = e.target.closest('.qp-item');
+    if (!item) return;
+    if (timer) { clearTimeout(timer); timer = null; }
+    timer = setTimeout(function() {
+      timer = null;
+      if (state.quickPhrases.length < 2) {
+        showToast('至少需要2个短语才能排序', 'warning');
+        return;
+      }
+      _qpListSortMode = true;
+      _qpListSortFirstId = null;
+      renderQpListSortView();
+    }, 600);
+  });
+
+  listEl.addEventListener('pointerup', function() {
+    if (timer) { clearTimeout(timer); timer = null; }
+  });
+  listEl.addEventListener('pointermove', function(e) {
+    if (timer && (Math.abs(e.movementX) > 5 || Math.abs(e.movementY) > 5)) {
+      clearTimeout(timer); timer = null;
+    }
+  });
+  listEl.addEventListener('pointercancel', function() {
+    if (timer) { clearTimeout(timer); timer = null; }
+  });
+})();
+
+function renderQpListSortView() {
+  var listEl = document.getElementById('qp-list');
+  var emptyEl = document.getElementById('qp-empty');
+  if (!listEl) return;
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  var html = '<div class="qp-sort-bar">';
+  html += '<span>点击条目选中，再点另一项交换</span>';
+  html += '<button class="btn-secondary" id="qp-list-sort-done" style="flex-shrink:0;font-size:12px;padding:4px 12px">完成</button>';
+  html += '</div>';
+
+  for (var i = 0; i < state.quickPhrases.length; i++) {
+    var p = state.quickPhrases[i];
+    var activeClass = (p.id === _qpListSortFirstId) ? ' qp-list-sort-active' : '';
+    var preview = p.content.length > 30 ? p.content.slice(0, 30) + '...' : p.content;
+    html += '<div class="qp-item' + activeClass + '" data-qp-sort-id="' + p.id + '" style="cursor:pointer">';
+    html += '<span class="qp-title">' + escapeHtml(p.title) + '</span>';
+    html += '<span class="qp-preview">' + escapeHtml(preview) + '</span>';
+    html += '</div>';
+  }
+  listEl.innerHTML = html;
+
+  // 完成按钮
+  var doneBtn = document.getElementById('qp-list-sort-done');
+  if (doneBtn) {
+    doneBtn.addEventListener('click', function() {
+      _qpListSortMode = false;
+      _qpListSortFirstId = null;
+      refreshQuickPhraseList();
+    });
+  }
+
+  // 条目点击
+  listEl.querySelectorAll('[data-qp-sort-id]').forEach(function(item) {
+    item.addEventListener('click', function() {
+      var clickedId = item.dataset.qpSortId;
+
+      // 第一次选择
+      if (!_qpListSortFirstId) {
+        _qpListSortFirstId = clickedId;
+        renderQpListSortView();
+        return;
+      }
+
+      // 点同一个取消
+      if (_qpListSortFirstId === clickedId) {
+        _qpListSortFirstId = null;
+        renderQpListSortView();
+        return;
+      }
+
+      // 交换
+      var idx1 = state.quickPhrases.findIndex(function(p) { return p.id === _qpListSortFirstId; });
+      var idx2 = state.quickPhrases.findIndex(function(p) { return p.id === clickedId; });
+      if (idx1 === -1 || idx2 === -1) return;
+      var temp = state.quickPhrases[idx1];
+      state.quickPhrases[idx1] = state.quickPhrases[idx2];
+      state.quickPhrases[idx2] = temp;
+      saveQuickPhrases();
+      renderQuickPhraseBar();
+      _qpListSortFirstId = null;
+      renderQpListSortView();
+      showToast('已交换位置', 'success');
+    });
+  });
+}
 </script>
 </body>
 </html>
