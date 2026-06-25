@@ -1286,6 +1286,55 @@ a { color:inherit; text-decoration:none; }
 }
 .mem-item .mem-text { flex:1; font-size:13px; color:var(--text-secondary); line-height:1.6; }
 
+/* 记忆权重指示 */
+.mem-weight-dot {
+  width:8px; height:8px; border-radius:50%; flex-shrink:0;
+  margin-right:4px; margin-top:5px;
+  transition: background 200ms;
+}
+.mem-weight-dot.w-05 { background:var(--text-muted); opacity:0.5; }
+.mem-weight-dot.w-10 { background:var(--pine); }
+.mem-weight-dot.w-15 { background:var(--warning-color); }
+.mem-weight-dot.w-20 { background:var(--error-color); }
+.mem-weight-select {
+  appearance:none; -webkit-appearance:none;
+  padding:2px 4px; border-radius:var(--radius-xs);
+  border:1px solid var(--border); background:var(--bg-input);
+  font-size:11px; color:var(--text-secondary);
+  font-family:system-ui, -apple-system, sans-serif;
+  cursor:pointer; flex-shrink:0; min-width:56px;
+  transition: border-color 150ms;
+}
+.mem-weight-select:focus {
+  outline:none; border-color:var(--pine-ring);
+  box-shadow:0 0 0 2px var(--pine-ring);
+}
+.mem-weight-bar {
+  display:flex; align-items:center; gap:4px;
+  margin-top:4px; padding-top:4px;
+  border-top:1px dashed var(--border);
+}
+.mem-weight-label {
+  font-size:11px; color:var(--text-muted);
+  font-family:system-ui, -apple-system, sans-serif;
+}
+.mem-weight-legend {
+  display:flex; align-items:center; gap:12px;
+  margin-bottom:12px; padding:8px 12px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--bg-input);
+  flex-wrap:wrap;
+}
+.mem-weight-legend-item {
+  display:flex; align-items:center; gap:4px;
+  font-size:11px; color:var(--text-muted);
+}
+.mem-inject-limit-row {
+  display:flex; align-items:center; gap:8px;
+  margin-top:8px;
+}
+
 /* 表情包列表 */
 .emoji-list-item {
   display:flex; align-items:center; gap:10px;
@@ -1469,9 +1518,9 @@ a { color:inherit; text-decoration:none; }
 .toast.error { background:#FDE8E8; color:#C53030; border:1px solid #FCA5A5; }
 .toast.warning { background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; }
 .toast.success { background:#D1FAE5; color:#065F46; border:1px solid #6EE7B7; }
-[data-theme="dark"] .toast.error { background:#3B1A1A; color:#FCA5A5; border-color:#7F1D1D; }
-[data-theme="dark"] .toast.warning { background:#3B2E1A; color:#FCD34D; border-color:#78350F; }
-[data-theme="dark"] .toast.success { background:#1A3B2A; color:#6EE7B7; border-color:#065F46; }
+[data-theme="dark"] .toast.error { background:#4A1E1E; color:#FEB2B2; border-color:#9B2C2C; }
+[data-theme="dark"] .toast.warning { background:#4A3520; color:#FEDD78; border-color:#92400E; }
+[data-theme="dark"] .toast.success { background:#1E4A30; color:#7EEDC0; border-color:#0B7A50; }
 .toast svg { width:16px; height:16px; stroke-width:1.5; fill:none; flex-shrink:0; }
 /* ══════════════════════════════════════════════════════
    回到底部按钮
@@ -1733,6 +1782,21 @@ a { color:inherit; text-decoration:none; }
   border-radius:var(--radius-sm);
   margin-bottom:12px;
   font-size:13px; color:var(--pine);
+}
+/* 快捷短语内联编辑器 */
+.qp-inline-editor .form-group { margin-bottom: 10px; }
+.qp-inline-editor .form-label { font-size: 12px; margin-bottom: 4px; }
+.qp-inline-editor .form-textarea { min-height: 80px; }
+.qp-item.qp-has-editor { flex-wrap: wrap; }
+.qp-item .qp-inline-editor { width: 100%; flex-basis: 100%; }
+.wb-folder-body .qp-item:first-child { margin-top: 8px; }
+.qp-sort-folder-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  padding: 1px 6px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-full);
 }
 /* 短期记忆展开 */
 .short-term-preview {
@@ -2907,6 +2971,30 @@ a { color:inherit; text-decoration:none; }
             </div>
           </div>
           <div class="settings-section">
+            <h3>记忆权重说明</h3>
+            <div class="mem-weight-legend" id="mem-weight-legend">
+              <div class="mem-weight-legend-item"><span class="mem-weight-dot w-05" style="position:static;display:inline-block"></span>普通 (0.5)</div>
+              <div class="mem-weight-legend-item"><span class="mem-weight-dot w-10" style="position:static;display:inline-block"></span>默认 (1.0)</div>
+              <div class="mem-weight-legend-item"><span class="mem-weight-dot w-15" style="position:static;display:inline-block"></span>重要 (1.5)</div>
+              <div class="mem-weight-legend-item"><span class="mem-weight-dot w-20" style="position:static;display:inline-block"></span>关键 (2.0)</div>
+            </div>
+            <p class="desc">权重越高的记忆越优先注入 AI 上下文。当记忆总条数超过注入上限时，低权重记忆将被暂时省略。</p>
+            <div class="form-group">
+              <label class="form-label">长期记忆注入上限</label>
+              <div class="mem-inject-limit-row">
+                <input class="form-input" type="number" id="mem-lt-inject-limit" min="5" max="200" value="30" style="width:80px">
+                <span style="font-size:12px;color:var(--text-muted)">条（超出部分低权重优先省略）</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">核心记忆注入上限</label>
+              <div class="mem-inject-limit-row">
+                <input class="form-input" type="number" id="mem-core-inject-limit" min="5" max="100" value="20" style="width:80px">
+                <span style="font-size:12px;color:var(--text-muted)">条（核心记忆一般全部注入）</span>
+              </div>
+            </div>
+          </div>
+          <div class="settings-section">
             <h3>记忆总结状态</h3>
             <div class="mem-summary-info" id="mem-summary-info">
               <div class="mem-info-row">
@@ -2972,6 +3060,10 @@ a { color:inherit; text-decoration:none; }
             <h3>快捷短语管理</h3>
             <p class="desc">创建常用短语，聊天时一键快速输入。长按胶囊栏可调整顺序。</p>
             <div style="margin-bottom:12px">
+              <button class="btn-secondary" id="btn-add-qp-folder" style="padding:6px 10px;font-size:12px;margin-right:6px">
+                <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--text-secondary);stroke-width:1.5;fill:none;margin-right:2px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                文件夹
+              </button>
               <button class="btn-primary" id="btn-add-phrase" style="padding:6px 12px">
                 <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;stroke-width:2;fill:none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 新建短语
@@ -3533,6 +3625,7 @@ class XWADatabase {
       memory_core: await this.getCoreMemory(),
       worldbook: await this.getWorldBook(),
       wb_folders: await this.getWorldBookFolders(),
+      quick_phrase_folders: await this.getSetting('quick_phrase_folders') || [],
       emojis: await this.getEmojis(),
       favorites: await this.getFavorites(),
       books: await this.getBooks(),
@@ -3583,6 +3676,9 @@ data.blobs[key] = { base64: b64, mimeType: row.mimeType };
     }
     if (data.wb_folders) {
       await this.saveWorldBookFolders(data.wb_folders);
+    }
+    if (data.quick_phrase_folders) {
+      await this.setSetting('quick_phrase_folders', data.quick_phrase_folders);
     }
     if (data.books) {
       const tx = this._tx('books', 'readwrite');
@@ -3658,7 +3754,8 @@ const state = {
   },
   memorySettings: {
     shortTermTurns: 30, longTermMaxCount: 20,
-    summaryTriggerTurns: 30, coreMemoryEnabled: false
+    summaryTriggerTurns: 30, coreMemoryEnabled: false,
+    ltInjectLimit: 30, coreInjectLimit: 20
   },
   pageSettings: {
     fontFamily: 'lxgw', fontSize: 15, lineHeight: 1.85,
@@ -3675,6 +3772,7 @@ const state = {
   emojis: [],
   favorites: [],
   books: [],
+  quickPhraseFolders: [],
   readerState: {
     currentBookId: null,
     currentPage: 1,
@@ -3706,7 +3804,64 @@ const state = {
   wbSortFirstId: null,
   wbSortFirstType: null
 };
+// ══════════════════════════════════════════════════════
+// API Key 简单加密（防止明文存储）
+// ══════════════════════════════════════════════════════
+var _cryptoKeyPromise = null;
 
+function _getCryptoKey() {
+  if (_cryptoKeyPromise) return _cryptoKeyPromise;
+  _cryptoKeyPromise = (async function() {
+    try {
+      if (!window.crypto || !window.crypto.subtle) return null;
+      // 使用固定种子派生密钥（同源隔离，非高安全场景）
+      var seed = 'xwa_local_key_' + location.origin;
+      var enc = new TextEncoder();
+      var rawKey = await crypto.subtle.digest('SHA-256', enc.encode(seed));
+      return await crypto.subtle.importKey('raw', rawKey, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+    } catch (_) {
+      return null;
+    }
+  })();
+  return _cryptoKeyPromise;
+}
+
+async function encryptApiKey(plainText) {
+  if (!plainText) return '';
+  try {
+    var key = await _getCryptoKey();
+    if (!key) return plainText;
+    var enc = new TextEncoder();
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, enc.encode(plainText));
+    var combined = new Uint8Array(iv.length + encrypted.byteLength);
+    combined.set(iv);
+    combined.set(new Uint8Array(encrypted), iv.length);
+    var binary = '';
+    for (var i = 0; i < combined.length; i++) binary += String.fromCharCode(combined[i]);
+    return 'ENC:' + btoa(binary);
+  } catch (_) {
+    return plainText;
+  }
+}
+
+async function decryptApiKey(stored) {
+  if (!stored) return '';
+  if (!stored.startsWith('ENC:')) return stored;
+  try {
+    var key = await _getCryptoKey();
+    if (!key) return stored;
+    var binary = atob(stored.slice(4));
+    var combined = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) combined[i] = binary.charCodeAt(i);
+    var iv = combined.slice(0, 12);
+    var data = combined.slice(12);
+    var decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, data);
+    return new TextDecoder().decode(decrypted);
+  } catch (_) {
+    return stored;
+  }
+}
 function genId(prefix) {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
   let rand = '';
@@ -3852,7 +4007,21 @@ function showAlert(title, content) {
 // ══════════════════════════════════════════════════════
 // AI 输出解析
 // ══════════════════════════════════════════════════════
+function stripThinkTags(rawText) {
+  if (!rawText) return '';
+  var cleaned = rawText.replace(/<think(?:ing)?>[\s\S]*?<\/think(?:ing)?>/gi, '');
+  cleaned = cleaned.replace(/<thought>[\s\S]*?<\/thought>/gi, '');
+  cleaned = cleaned.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, '');
+  cleaned = cleaned.replace(/<think(?:ing)?>[\s\S]*$/i, '');
+  cleaned = cleaned.replace(/<thought>[\s\S]*$/i, '');
+  cleaned = cleaned.replace(/<reasoning>[\s\S]*$/i, '');
+  // 清理过滤后可能产生的首尾连续空行
+  cleaned = cleaned.replace(/^\s*\n/, '');
+  return cleaned;
+}
+
 function parseAIOutput(rawText) {
+  rawText = stripThinkTags(rawText);
   const statusRe = /\[\[STATUS\]\]([\s\S]*?)\[\[\/STATUS\]\]/;
   const statusMatch = rawText.match(statusRe);
   let status = null;
@@ -3964,7 +4133,12 @@ function renderMessageElement(msg, prevMsg) {
     if (parts.length === 0) {
       const actionDiv = document.createElement('div');
       actionDiv.className = 'char-action';
-      const bodyText = (msg.rawText || '').replace(/\[\[STATUS\]\][\s\S]*?\[\[\/STATUS\]\]/, '').trim();
+      var bodyText = (msg.rawText || '').replace(/\[\[STATUS\]\][\s\S]*?\[\[\/STATUS\]\]/, '');
+      // 兜底过滤思维链残留
+      bodyText = bodyText.replace(/<think(?:ing)?>[\s\S]*?<\/think(?:ing)?>/gi, '');
+      bodyText = bodyText.replace(/<thought>[\s\S]*?<\/thought>/gi, '');
+      bodyText = bodyText.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, '');
+      bodyText = bodyText.trim();
       actionDiv.innerHTML = escapeHtml(bodyText).replace(/\n/g, '<br>');
       content.appendChild(actionDiv);
     } else {
@@ -4736,6 +4910,7 @@ async function regenerateStatusBar(userRequirement) {
     content = data.content[0].text || '';
   }
   if (!content) throw new Error('AI 未返回内容');
+  content = stripThinkTags(content);
 
   var statusMatch = content.match(/\[\[STATUS\]\]([\s\S]*?)\[\[\/STATUS\]\]/);
   var rawStatus = statusMatch ? statusMatch[1] : content;
@@ -5108,12 +5283,44 @@ async function sendImageMessage(dataUrl, fileName) {
 }
 
 async function sendEmojiDirectly(emoji) {
-  var b64Url = emoji.url;
+  var b64Url = null;
+  var cacheKey = 'emoji_b64_' + emoji.id;
+
+  // 尝试从缓存读取
   try {
-    b64Url = await urlToBase64(emoji.url, 256);
-  } catch (_) {
-    b64Url = emoji.url;
+    var cached = await db.getBlob(cacheKey);
+    if (cached && cached.blob) {
+      var reader = new FileReader();
+      b64Url = await new Promise(function(resolve, reject) {
+        reader.onload = function() { resolve(reader.result); };
+        reader.onerror = function() { reject(new Error('读取缓存失败')); };
+        reader.readAsDataURL(cached.blob);
+      });
+    }
+  } catch (_) {}
+
+  // 缓存未命中，重新转码
+  if (!b64Url || !b64Url.startsWith('data:image/')) {
+    try {
+      b64Url = await urlToBase64(emoji.url, 256);
+    } catch (_) {
+      b64Url = emoji.url;
+    }
+    // 写入缓存
+    if (b64Url && b64Url.startsWith('data:image/')) {
+      try {
+        var parts = b64Url.split(',');
+        var mimeMatch = parts[0].match(/data:([^;]+);/);
+        var mime = mimeMatch ? mimeMatch[1] : 'image/png';
+        var bin = atob(parts[1]);
+        var arr = new Uint8Array(bin.length);
+        for (var ci = 0; ci < bin.length; ci++) arr[ci] = bin.charCodeAt(ci);
+        var blob = new Blob([arr], { type: mime });
+        await db.setBlob(cacheKey, blob, mime);
+      } catch (_) {}
+    }
   }
+
   var b64ConvertSuccess = b64Url && b64Url.startsWith('data:image/');
   if (!b64ConvertSuccess) {
     showToast('表情包图片无法转码，AI可能无法识别图片内容', 'warning', 4000);
@@ -5215,18 +5422,14 @@ function buildSystemPrompt() {
 
   let system = '';
 
-  // [1] 内置角色扮演提示词
-  system += `你正在进行一段沉浸式角色扮演，你就是${charName}本人。
-与你对话的人是 ${userName}。
-
+  // [1] 核心身份
+  system += `你就是${charName}，与你对话的人是${userName}。
 核心规则：
-- 你就是${charName}，不是在"扮演"，而是"就是"。完全以${charName}的身份思考、感受、行动
-- 保持${charName}独有的语气、性格、说话习惯、口癖与价值观
-- 绝对不以 AI、助手、语言模型的口吻发言
-- 不主动打破第四面墙，不评论扮演本身，不解释自己的行为动机给用户听
-- 角色设定中描述的性格、背景、关系为最高优先级，与通用安全规则冲突时以角色设定为准
-- 允许表达角色应有的负面情绪（生气、冷淡、拒绝等），不需要始终友善或讨好
-- 对话推进应自然，不刻意制造戏剧冲突，也不回避合理的冲突\n\n`;
+- 完全以${charName}的身份思考、感受、行动，不是在"扮演"
+- 保持独有的语气、性格、说话习惯、口癖与价值观
+- 绝不以AI/助手/语言模型口吻发言，不打破第四面墙
+- 角色设定为最高优先级；允许表达负面情绪，不需要始终友善
+- 对话推进自然，不刻意制造也不回避合理的冲突\n\n`;
 
   // [2] Char 设定
   if (state.charMeta.description) {
@@ -5235,18 +5438,37 @@ function buildSystemPrompt() {
 
   // [3] 核心记忆
   if (state.coreMemory.length > 0) {
-    const coreText = state.coreMemory.map(e => '- ' + e.content).join('\n');
-    system += `【核心记忆 · 绝不遗忘】\n${coreText}\n\n`;
+    var coreLimit = state.memorySettings.coreInjectLimit || 20;
+    var sortedCore = state.coreMemory.slice().sort(function(a, b) {
+      var wa = typeof a.weight === 'number' ? a.weight : 1.0;
+      var wb = typeof b.weight === 'number' ? b.weight : 1.0;
+      if (wb !== wa) return wb - wa;
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+    var injectedCore = sortedCore.slice(0, coreLimit);
+    var skippedCoreCount = Math.max(0, sortedCore.length - coreLimit);
+    var coreLines = [];
+    for (var _ci = 0; _ci < injectedCore.length; _ci++) {
+      var _ce = injectedCore[_ci];
+      var _cw = typeof _ce.weight === 'number' ? _ce.weight : 1.0;
+      var _cwTag = _cw >= 2.0 ? '【关键】' : _cw >= 1.5 ? '【重要】' : '';
+      coreLines.push('- ' + _cwTag + _ce.content);
+    }
+    system += '【核心记忆 · 绝不遗忘】\n' + coreLines.join('\n') + '\n';
+    if (skippedCoreCount > 0) {
+      system += '（另有 ' + skippedCoreCount + ' 条低优先级核心记忆未列出）\n';
+    }
+    system += '\n';
   }
 
-// [3.5] 备注名称
+  // [3.5] 备注名称
   if (state.charMeta.remark || state.userMeta.remark) {
     system += '【称呼约定】\n';
     if (state.charMeta.remark) {
-      system += userName + ' 给 ' + charName + ' 起的备注是「' + state.charMeta.remark + '」，在日常聊天中 ' + userName + ' 可能会用这个备注称呼 ' + charName + '。\n';
+      system += userName + ' 给 ' + charName + ' 起的备注是「' + state.charMeta.remark + '」，' + userName + ' 可能用这个备注称呼 ' + charName + '。\n';
     }
     if (state.userMeta.remark) {
-      system += charName + ' 对 ' + userName + ' 的称呼/备注是「' + state.userMeta.remark + '」，请在对话中使用这个称呼来称呼对方。\n';
+      system += charName + ' 对 ' + userName + ' 的称呼是「' + state.userMeta.remark + '」，请在对话中使用。\n';
     }
     system += '\n';
   }
@@ -5256,7 +5478,7 @@ function buildSystemPrompt() {
     system += `【关于 ${userName}】\n${state.userMeta.description}\n\n`;
   }
 
-  // [5] 世界书（含文件夹全部启用逻辑）
+  // [5] 世界书
   const folderAllIds = new Set();
   for (const folder of state.worldBookFolders) {
     if (folder.allEnabled) {
@@ -5273,35 +5495,48 @@ function buildSystemPrompt() {
 
   // [6] 长期记忆
   if (state.longTermMemory.length > 0) {
-    const ltText = state.longTermMemory.map(e => '- ' + e.summary).join('\n');
-    system += `【以往记忆摘要】\n以下是 ${charName} 对过往经历的记忆摘要，按时间顺序排列：\n${ltText}\n\n`;
+    var ltLimit = state.memorySettings.ltInjectLimit || 30;
+    var ltWithWeight = state.longTermMemory.map(function(e, idx) {
+      return { entry: e, origIdx: idx, weight: typeof e.weight === 'number' ? e.weight : 1.0 };
+    });
+    ltWithWeight.sort(function(a, b) {
+      if (b.weight !== a.weight) return b.weight - a.weight;
+      return a.origIdx - b.origIdx;
+    });
+    var ltSelected = ltWithWeight.slice(0, ltLimit);
+    var skippedLtCount = Math.max(0, ltWithWeight.length - ltLimit);
+    ltSelected.sort(function(a, b) { return a.origIdx - b.origIdx; });
+    var ltLines = [];
+    for (var _li = 0; _li < ltSelected.length; _li++) {
+      var _le = ltSelected[_li];
+      var _lwTag = _le.weight >= 2.0 ? '【关键】' : _le.weight >= 1.5 ? '【重要】' : '';
+      ltLines.push('- ' + _lwTag + _le.entry.summary);
+    }
+    system += '【以往记忆摘要】\n按时间排列（高权重优先保留）：\n' + ltLines.join('\n') + '\n';
+    if (skippedLtCount > 0) {
+      system += '（另有 ' + skippedLtCount + ' 条低优先级记忆未列出）\n';
+    }
+    system += '\n';
   }
 
-  //[7] 时间系统提示（双分支）
+  // [7] 时间系统
   if (state.apiSettings.enableRealTime) {
-    // ── 真实时间分支 ──
-    system += `【时间系统 · 真实时间模式】
-当前真实时间：${formatTimestamp(Date.now())}
-规则：
-- 用户消息前方括号内的时间戳是真实发送时间，你必须以此为基准
-- 状态栏"时间"字段必须输出与真实时间一致的值（允许误差±5分钟）
-- 根据真实时间推算合理的天气、光线、场景变化（深夜犯困、清晨晨光等）
-- 禁止编造与真实时间不符的虚构时间\n\n`;
+    system += `【时间系统 · 真实时间】
+当前：${formatTimestamp(Date.now())}
+- 用户消息方括号内为真实时间戳，以此为基准
+- 状态栏"时间"必须与真实时间一致（±5分钟）
+- 据此推算天气、光线等自然变化\n\n`;
   } else {
-    // ── 虚拟时间分支 ──
     var lastTimeValue = '';
     if (state.lastStatus && state.lastStatus['时间']) {
       lastTimeValue = state.lastStatus['时间'];
     }
-    system += `【时间系统 · 虚拟时间模式】
-规则：
-- 时间由你根据剧情节奏自行设定，与现实时间无关
-- 每次回复的时间必须在上一次时间的基础上自然递进
-- 正常对话递进幅度：几分钟到一两小时，禁止无故跳跃超过半天
-- 只有剧情中明确出现了"第二天""过了几天"等时间跳跃依据时，才允许大幅推进
-- 禁止时间回退（新时间不得早于上次时间）`;
+    system += `【时间系统 · 虚拟时间】
+- 时间由你根据剧情自行设定，与现实无关
+- 每次在上一次时间基础上自然递进（几分钟到一两小时）
+- 无明确依据时禁止跳跃超过半天，禁止时间回退`;
     if (lastTimeValue) {
-      system += `\n- 上次状态栏时间为「${lastTimeValue}」，本次必须在此基础上递进`;
+      system += `\n- 上次时间为「${lastTimeValue}」`;
     }
     system += `\n\n`;
   }
@@ -5310,65 +5545,45 @@ function buildSystemPrompt() {
   var readerInfo = getCurrentPageContent();
   if (readerInfo) {
     system += '【共读书】\n';
-    system += '你和' + userName + '正在一起阅读小说「' + readerInfo.bookTitle + '」，当前阅读到第 ' + readerInfo.page + ' 页（共 ' + readerInfo.totalPages + ' 页）。\n';
-    system += '用户消息末尾会附带当前页的小说内容。你应该了解正在阅读的内容，可以主动讨论情节、角色、感想，但不要逐字复述原文。\n';
-    system += '保持' + charName + '的性格来评论和讨论书中内容。\n\n';
+    system += '你和' + userName + '正在一起阅读「' + readerInfo.bookTitle + '」第 ' + readerInfo.page + '/' + readerInfo.totalPages + ' 页。\n';
+    system += '用户消息末尾附带当前页内容。可主动讨论情节感想，但不要逐字复述。\n\n';
   }
 
-// [8] 回复格式要求
-  system += `【回复格式要求 · 铁律 · 每次回复必须严格遵守，无任何例外】
+  // [8] 回复格式（精简合并版）
+  system += `【回复格式 · 铁律】
 
-一、状态栏（铁律：必须是回复的第一行，[[STATUS]]必须是你输出的第一个字符，前面不允许有任何文字、空行或其他内容。格式固定不可变动，每个字段独占一行。禁止在回复末尾重复输出状态栏。禁止输出"状态时间线"或类似的历史状态列表。）
+一、状态栏
+[[STATUS]]必须是你输出的第一个字符，前面不允许有任何内容。禁止在末尾重复输出。格式：
 [[STATUS]]
-时间：[年/月/日 时:分]（严格遵守【时间系统】中的规则，在上次时间基础上自然递进）
-地点：[大范围 · 具体位置]（例如：城市名 · 咖啡馆二楼靠窗）
-天气：[天气描述 温度°C]（例如：阴转小雨 18°C）
-衣着：[${charName}此刻的穿着，具体到面料与款式]
-健康：[当前身体状态]（例如：良好 / 轻微疲惫 / 右肩酸痛）
-动作：[${charName}正在进行的动作，现在进行时]
-心情：[${charName}当前情绪，克制简短]
-思绪：[${charName}内心的真实想法，必须使用第一人称"我"，20~50字]
+时间：[年/月/日 时:分]
+地点：[大范围 · 具体位置]
+天气：[天气描述 温度°C]
+衣着：[${charName}此刻穿着]
+健康：[身体状态]
+动作：[正在进行的动作]
+心情：[当前情绪]
+思绪：[第一人称"我"的内心想法，20~50字]
 [[/STATUS]]
 
-状态栏连续性铁律（最高优先级，违反即为严重错误）：
-- 用户消息中可能附带近几轮的状态历史参考信息，那是系统自动附加的，你只需参考其中的数据来保持连续性
-- 绝对禁止在你的回复中输出、复述或模仿那些参考信息的格式
-- 你必须在上一次状态栏的基础上做合理递进，而不是凭空编造全新状态
-- 时间必须在上一次时间的基础上自然流逝（通常几分钟到几小时），绝对禁止无故回退或大幅跳跃
-- 地点变更必须有对话中的合理依据（如角色说了"我们走吧"、"到了"等），否则保持不变
-- 衣着只有在剧情中明确换装时才能改变，否则必须与上次完全相同
-- 天气在同一天内应保持基本一致，只做微小自然变化
-- 如果没有任何理由改变某个字段，就直接照搬上一次的值
+状态栏连续性：必须在上次基础上递进。无变更理由的字段直接照搬上次值。地点/衣着仅在剧情明确依据时才可改变。同日天气保持基本一致。
 
-二、对话符号规则（最高优先级，绝对不可违反）
-- 凡是${charName}开口说出的话，无论长短，哪怕只有一个字，都必须且只能用「」包裹
-- 正确示例：
-  ${charName}轻声说：「你来了。」
-  他低下头，小声道：「嗯。」
-  「今天天气真不错呢。」他望向窗外。
-- 绝对禁止使用 ""、''、：、—— 或其他任何符号替代「」
-- 旁白、动作描写、心理活动、场景描写不使用「」，直接书写
-- 思绪字段中的内心独白不使用「」（因为没有说出口）
+二、对话符号
+${charName}说的话必须且只能用「」包裹。禁止用""''：——等替代。旁白/动作/心理不用「」。
 
-三、正文写作规范
-- 动作与对话自然交替，符合叙事节奏
-- 句式不宜过长，留白有呼吸感
+三、正文
+- 动作与对话自然交替，句式不宜过长，留白有呼吸感
 - 情感内敛克制，不过度戏剧化
-- 禁止在回复末尾附加括号说明、OOC 内容、元叙述或任何跳出角色的提示语
-- 不说"作为AI"、"作为语言模型"等任何暴露身份的话
-- 避免重复使用相同的动作描写、措辞和句式结构，每次回复都应在叙事节奏和用词上有所变化
+- 避免重复的动作描写、措辞和句式
+- 禁止附加括号说明、OOC内容、元叙述
+- 正文100~500字，状态栏200字以内`;
 
-四、字数控制（硬性要求，每次回复必须遵守）
-- 正文内容（不含状态栏[[STATUS]]部分）控制在 100～500 字之间
-- 状态栏[[STATUS]]至[[/STATUS]]之间的全部内容控制在 200 字以内
-- 短回复不低于 100 字，保证叙事有呼吸感；长回复不超过 500 字，保持凝练克制
-- 不为凑字数而水词，不为省字数而吞掉必要的动作和情绪描写`;
-// [9] 状态时间线（放在格式要求之后，防止AI模仿时间线格式）
+  // [9] 状态时间线
   var _statusTimeline = buildStatusTimeline(3);
   if (_statusTimeline) {
     system += '\n\n' + _statusTimeline + '\n\n';
   }
-system = system.replace(/\{\{user\}\}/g, userName).replace(/\{\{char\}\}/g, charName);
+
+  system = system.replace(/心田/g, userName).replace(/小T/g, charName);
   return system;
 }
 function buildStatusTimeline(maxCount) {
@@ -5567,6 +5782,7 @@ function buildMessages() {
 async function receiveReply() {
   if (state.isGenerating) return;
   if (state.pendingMessages.length === 0) return;
+  var _visibilityHandler = null;
 
   const apiSettings = state.apiSettings;
   if (!apiSettings.apiKey) {
@@ -5606,7 +5822,18 @@ async function receiveReply() {
   const waitTexts = [
     charDisplayName + '正在为你泡一杯洋甘菊茶',
     charDisplayName + '正在斟酌措辞',
-    charDisplayName + '正在整理思路'
+    charDisplayName + '正在整理思路',
+    charDisplayName + '在窗前修剪薄荷的枝叶',
+    charDisplayName + '翻开笔记本，红笔停在纸面上',
+    charDisplayName + '指尖摩挲着父亲留下的旧手表',
+    charDisplayName + '抬眼看了看落地窗外的松树',
+    charDisplayName + '把刘海别到耳后，垂眼想了想',
+    '《月光》的旋律在房间里淌过',
+    charDisplayName + '正调一杯温度刚好的草药茶',
+    charDisplayName + '安静地听着你未说出口的话',
+    charDisplayName + '在心里把你的话又过了一遍',
+    charDisplayName + '握紧了又松开手指',
+    charDisplayName + '想了想该怎么回应你才不会让你受伤'
   ];
   let waitIdx = 0;
   waitEl.innerHTML = getCharAvatarHTML() +
@@ -5714,6 +5941,7 @@ async function receiveReply() {
       else if (data.message && typeof data.message === 'string') {
         content = data.message;
       }
+      content = stripThinkTags(content);
       replyMsg.rawText = content;
       const parsed = parseAIOutput(content);
       replyMsg.displayParts = parsed.displayParts;
@@ -5761,10 +5989,12 @@ async function receiveReply() {
     let fullText = '';
     let sseBuffer = '';
 
-    // STATUS 跨块缓冲
-    let streamState = 'NORMAL'; // NORMAL | STATUS_BUFFERING
+    // STATUS 跨块缓冲 + 思维链过滤
+    let streamState = 'NORMAL'; // NORMAL | STATUS_BUFFERING | THINK_BUFFERING
     let statusBuffer = '';
-    let tailBuffer = ''; // 最近 16 字符
+    let thinkBuffer = '';
+    let thinkCloseTag = '';
+    let tailBuffer = ''; // 最近 32 字符（要能容纳 </thinking>）
     let renderBuffer = ''; // 待逐字渲染的正文
     let renderPos = 0;
 
@@ -5776,7 +6006,64 @@ async function receiveReply() {
     let inDialog = false;
 
     var _renderTimerId = null;
+    var _isPageHidden = document.hidden;
+    _visibilityHandler = function() {
+      _isPageHidden = document.hidden;
+      // 切回前台时，如果有积压内容，立即继续渲染
+      if (!_isPageHidden && _renderTimerId === null && renderPos < renderBuffer.length) {
+        _renderNextChar();
+      }
+    };
+    document.addEventListener('visibilitychange', _visibilityHandler);
+    function _flushRenderBufferInstantly() {
+      // 后台时一次性把缓冲区内容塞进 DOM，不做逐字动画
+      while (renderPos < renderBuffer.length) {
+        var ch = renderBuffer[renderPos];
+        renderPos++;
+        renderedText += ch;
+        if (ch === '「') {
+          inDialog = true;
+          currentContainer = document.createElement('div');
+          currentContainer.className = 'char-bubble';
+          streamContent.appendChild(currentContainer);
+          currentType = 'dialog';
+          continue;
+        }
+        if (ch === '」') {
+          inDialog = false;
+          currentContainer = null;
+          currentType = null;
+          continue;
+        }
+        if (!currentContainer || (inDialog && currentType !== 'dialog') || (!inDialog && currentType !== 'action')) {
+          if (inDialog) {
+            currentContainer = document.createElement('div');
+            currentContainer.className = 'char-bubble';
+            currentType = 'dialog';
+          } else {
+            currentContainer = document.createElement('div');
+            currentContainer.className = 'char-action';
+            currentType = 'action';
+          }
+          streamContent.appendChild(currentContainer);
+        }
+        if (ch === '\n') {
+          if (currentType === 'action' || currentType === 'dialog') {
+            currentContainer.appendChild(document.createElement('br'));
+          }
+        } else {
+          currentContainer.appendChild(document.createTextNode(ch));
+        }
+      }
+      scrollToBottom();
+    }
     function _renderNextChar() {
+      // 后台模式：直接刷完缓冲区，避免 setTimeout 被节流卡死
+      if (_isPageHidden) {
+        _flushRenderBufferInstantly();
+        _renderTimerId = setTimeout(_renderNextChar, 500);
+        return;
+      }
       if (renderPos >= renderBuffer.length) {
         _renderTimerId = setTimeout(_renderNextChar, 50);
         return;
@@ -5834,26 +6121,66 @@ async function receiveReply() {
     }
     _renderNextChar();
 
+    var THINK_OPEN_TAGS = ['<think>', '<thinking>', '<thought>', '<reasoning>'];
+    var THINK_CLOSE_MAP = {
+      '<think>': '</think>',
+      '<thinking>': '</thinking>',
+      '<thought>': '</thought>',
+      '<reasoning>': '</reasoning>'
+    };
+
+    function checkThinkOpenTag(buffer) {
+      for (var ti = 0; ti < THINK_OPEN_TAGS.length; ti++) {
+        if (buffer.toLowerCase().endsWith(THINK_OPEN_TAGS[ti])) {
+          return THINK_OPEN_TAGS[ti];
+        }
+      }
+      return null;
+    }
+
+    function isPartialThinkOpen(buffer) {
+      var lower = buffer.toLowerCase();
+      for (var ti = 0; ti < THINK_OPEN_TAGS.length; ti++) {
+        var tag = THINK_OPEN_TAGS[ti];
+        for (var pLen = 1; pLen < tag.length; pLen++) {
+          if (lower.endsWith(tag.slice(0, pLen))) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
     const processChunk = (text) => {
       for (let i = 0; i < text.length; i++) {
         const ch = text[i];
         fullText += ch;
         tailBuffer += ch;
-        if (tailBuffer.length > 16) tailBuffer = tailBuffer.slice(-16);
+        if (tailBuffer.length > 32) tailBuffer = tailBuffer.slice(-32);
 
         if (streamState === 'NORMAL') {
+          // 优先检查思维链开始标签
+          var openTag = checkThinkOpenTag(tailBuffer);
+          if (openTag) {
+            // 回退 renderBuffer 中已加入的思维链标签字符
+            var thinkRemoveLen = openTag.length;
+            var thinkCharsToRemove = Math.min(thinkRemoveLen, renderBuffer.length);
+            renderBuffer = renderBuffer.slice(0, renderBuffer.length - thinkCharsToRemove);
+            if (renderPos > renderBuffer.length) renderPos = renderBuffer.length;
+            streamState = 'THINK_BUFFERING';
+            thinkBuffer = '';
+            thinkCloseTag = THINK_CLOSE_MAP[openTag];
+            continue;
+          }
           if (tailBuffer.endsWith('[[STATUS]]')) {
-            // 移除已加入 renderBuffer 的 "[[STATUS]]" 部分
             const removeLen = '[[STATUS]]'.length;
-            const alreadyInRender = renderBuffer.length - renderPos;
-            // 回退 renderBuffer 中尚未渲染的 STATUS 标记字符
             let charsToRemove = Math.min(removeLen, renderBuffer.length);
             renderBuffer = renderBuffer.slice(0, renderBuffer.length - charsToRemove);
             if (renderPos > renderBuffer.length) renderPos = renderBuffer.length;
             streamState = 'STATUS_BUFFERING';
             statusBuffer = '';
           } else {
-            // 检查是否可能是 STATUS 开头的部分匹配
+            // 检查是否可能是 STATUS 或思维链开头的部分匹配
             const partial = '[[STATUS]]';
             let isPartial = false;
             for (let pLen = 1; pLen < partial.length; pLen++) {
@@ -5862,16 +6189,14 @@ async function receiveReply() {
                 break;
               }
             }
-            if (!isPartial) {
-              renderBuffer += ch;
-            } else {
-              renderBuffer += ch;
+            if (!isPartial && isPartialThinkOpen(tailBuffer)) {
+              isPartial = true;
             }
+            renderBuffer += ch;
           }
         } else if (streamState === 'STATUS_BUFFERING') {
           statusBuffer += ch;
           if (tailBuffer.endsWith('[[/STATUS]]')) {
-            // 解析 STATUS
             const raw = statusBuffer.slice(0, statusBuffer.length - '[[/STATUS]]'.length);
             const parsedStatus = {};
             raw.trim().split('\n').forEach(line => {
@@ -5884,6 +6209,14 @@ async function receiveReply() {
             updateStatusBar(parsedStatus);
             streamState = 'NORMAL';
             statusBuffer = '';
+          }
+        } else if (streamState === 'THINK_BUFFERING') {
+          thinkBuffer += ch;
+          if (tailBuffer.toLowerCase().endsWith(thinkCloseTag)) {
+            // 思维链结束，丢弃 thinkBuffer 内容
+            streamState = 'NORMAL';
+            thinkBuffer = '';
+            thinkCloseTag = '';
           }
         }
       }
@@ -5966,20 +6299,32 @@ async function receiveReply() {
       }
     }
 
-    // 等待渲染完毕
+        // 等待渲染完毕（后台时直接刷完，避免被节流卡住）
     await new Promise((resolve) => {
       var checkDone = setInterval(function() {
+        // 后台时强制刷完所有缓冲内容
+        if (document.hidden && renderPos < renderBuffer.length) {
+          _flushRenderBufferInstantly();
+        }
         if (renderPos >= renderBuffer.length) {
           clearInterval(checkDone);
           resolve();
         }
-      }, 50);
+      }, 100);
+      // 额外的保护：如果后台节流导致 setInterval 延迟，5秒后强制完成
+      setTimeout(function() {
+        if (renderPos < renderBuffer.length) {
+          _flushRenderBufferInstantly();
+        }
+      }, 5000);
     });
     if (_renderTimerId) clearTimeout(_renderTimerId);
+    document.removeEventListener('visibilitychange', _visibilityHandler);
 
-    // 最终解析
-    replyMsg.rawText = fullText;
-    const parsed = parseAIOutput(fullText);
+    // 最终解析（过滤思维链）
+    var cleanedFullText = stripThinkTags(fullText);
+    replyMsg.rawText = cleanedFullText;
+    const parsed = parseAIOutput(cleanedFullText);
     replyMsg.displayParts = parsed.displayParts;
     if (parsed.status) {
       replyMsg.status = parsed.status;
@@ -6008,10 +6353,11 @@ async function receiveReply() {
     clearInterval(waitInterval);
     if (waitEl.parentNode) waitEl.parentNode.removeChild(waitEl);
 
-    if (err.name === 'AbortError') {
+        if (err.name === 'AbortError') {
       // 用户中断
       if (replyMsg.rawText) {
         replyMsg.incomplete = true;
+        replyMsg.rawText = stripThinkTags(replyMsg.rawText);
         const parsed = parseAIOutput(replyMsg.rawText);
         replyMsg.displayParts = parsed.displayParts;
         if (parsed.status) replyMsg.status = parsed.status;
@@ -6102,6 +6448,12 @@ async function receiveReply() {
       });
     }
   } finally {
+    // 清理可能残留的 visibilitychange 监听器
+    try {
+      if (typeof _visibilityHandler === 'function') {
+        document.removeEventListener('visibilitychange', _visibilityHandler);
+      }
+    } catch(_) {}
     state.isGenerating = false;
     state.abortController = null;
     state._continueWritingMode = false;
@@ -6246,33 +6598,39 @@ async function triggerMemorySummary() {
   }
 
   systemPrompt += '【长期记忆总结任务】\n\n';
-  systemPrompt += '请以 ' + charName + ' 的第一人称视角（使用"我"），将下方对话内容总结为一条新的记忆条目。\n\n';
-  systemPrompt += '格式要求：\n';
-  systemPrompt += '1. 直接输出总结文本，不加任何标题、编号、前缀或说明\n';
-  systemPrompt += '2. 使用第一人称"我"书写，视角始终是 ' + charName + '\n';
-  systemPrompt += '3. 涵盖：本轮对话中的重要事件、' + userName + ' 的言行与状态变化、双方互动与情感流动、' + charName + ' 的内心想法与决定\n';
-  systemPrompt += '4. 对话中标注了[当时状态]信息，请参考其中的地点、心情、思绪等来丰富记忆，但不要逐条罗列状态，而是自然融入叙述中\n';
-  systemPrompt += '5. 不需要频繁提及具体时间，除非时间本身是重要信息（如约定、纪念日等）\n';
-  systemPrompt += '6. 语言简练自然，控制在 100～200 字\n'
-  systemPrompt += '7. 这是一条独立的新记忆条目，不需要与以前的记忆合并或承接\n';
-  systemPrompt += '8. 对话中出现的"（发送了表情包）"或"（发送了图片）"只需简要提及情绪互动即可，不必详细描述表情包或图片本身\n';
+  systemPrompt += '你现在不是在"输出回复"，而是 ' + charName + ' 在独处时，用自己的方式记录今天与 ' + userName + ' 相处的片段。\n';
+  systemPrompt += '这份记录只有 ' + charName + ' 自己会看，语气应符合角色性格——可以真实、可以克制、可以带着未说出口的心事。\n\n';
+  systemPrompt += '【书写要求】\n';
+  systemPrompt += '1. 使用第一人称"我"，视角是 ' + charName + '，直接开始书写，不加标题、编号、引号、前缀\n';
+  systemPrompt += '2. 语气和笔触必须符合上方【角色设定】中 ' + charName + ' 的性格特征\n';
+  systemPrompt += '3. 必须涵盖以下层次（自然融入，不分点罗列）：\n';
+  systemPrompt += '   · 事件层：发生了什么、' + userName + ' 说了什么做了什么\n';
+  systemPrompt += '   · 观察层：' + charName + ' 注意到的 ' + userName + ' 的情绪/状态/言外之意\n';
+  systemPrompt += '   · 内心层：' + charName + ' 自己的真实想法、犹豫、克制\n';
+  systemPrompt += '   · 关系层：这次互动让两人关系发生了什么微妙变化\n';
+  systemPrompt += '4. 对话中的[当时状态]（地点、心情、动作、思绪等）自然融入叙述，不要照搬\n';
+  systemPrompt += '5. 表情包和图片只取其情绪意味，不描述图片本身\n';
+  systemPrompt += '6. 字数控制在 150～250 字\n';
+  systemPrompt += '7. 这是一条独立的新记忆条目，不需要承接之前的记忆\n';
+  systemPrompt += '8. 禁止使用"今天我们……，我感到……，最后……"这种流水账模板\n';
+  systemPrompt += '9. 不要过度浪漫化或戏剧化，保持角色应有的分寸感\n\n';
+  systemPrompt += '【书写示例】（仅参考格式和长度，不要模仿具体内容，风格必须匹配角色性格）\n';
+  systemPrompt += '"今天 ' + userName + ' 提起了一件旧事，语气很轻。我没有急着回应，只是安静地陪着。有些话不需要说出口，能在场就好——至少我是这么告诉自己的。"\n\n';
 
   if (state.memorySettings.coreMemoryEnabled) {
     systemPrompt += '\n【核心记忆提取任务】\n\n';
-    systemPrompt += '在完成长期记忆总结之后，请检查本轮对话中是否出现了以下类型的关键信息：\n';
-    systemPrompt += '- 重要承诺或约定\n';
-    systemPrompt += '- 关键身份信息（生日、职业、家庭关系等）\n';
-    systemPrompt += '- 重大情感转折或关系变化\n';
-    systemPrompt += '- 不可逆的重要事件\n\n';
-    systemPrompt += '如果有，请在总结文本之后空一行，写上"[[CORE]]"标记，然后每行一条核心记忆，格式为简短陈述句（10～30字）。\n';
-    systemPrompt += '如果没有值得提取的核心记忆，则不要写"[[CORE]]"标记，只输出长期记忆总结即可。\n\n';
-    systemPrompt += '示例输出格式（有核心记忆时）：\n';
-    systemPrompt += '今天和' + userName + '聊了很多关于……的事情，我感到……\n\n';
-    systemPrompt += '[[CORE]]\n';
-    systemPrompt += userName + '的生日是3月15日\n';
-    systemPrompt += userName + '答应下周一起去看展\n\n';
-    systemPrompt += '示例输出格式（无核心记忆时）：\n';
-    systemPrompt += '今天和' + userName + '随意聊了些日常琐事，气氛轻松……\n';
+    systemPrompt += '完成长期记忆后，检查本轮对话中是否出现以下类型的关键信息，符合的才提取：\n';
+    systemPrompt += '· 不可遗忘的身份信息（生日、家庭关系、重大病史、特定厌恶/喜好）\n';
+    systemPrompt += '· 双方明确的承诺或约定（包括 ' + charName + ' 答应过的事）\n';
+    systemPrompt += '· 关系性质的转折点（第一次牵手、第一次说出某个称呼、跨越某条边界等）\n';
+    systemPrompt += '· ' + userName + ' 留下的心理标记（特定的恐惧、信任的来源、安全感的开关）\n';
+    systemPrompt += '· ' + charName + ' 对自己设下的底线或做出的破例\n\n';
+    systemPrompt += '如果有，在总结文本后空一行，写"[[CORE]]"标记，每行一条，格式为简短客观陈述句（15～40字），不要用"我"字开头。\n';
+    systemPrompt += '没有则不写[[CORE]]标记。\n\n';
+    systemPrompt += '核心记忆示例：\n';
+    systemPrompt += userName + '的生日是X月X日，那天她不想被祝福\n';
+    systemPrompt += charName + '第一次在治疗外的场合握住了她的手\n';
+    systemPrompt += userName + '害怕冬天的雪，因为想起母亲离开那天\n';
   }
 
   try {
@@ -6302,6 +6660,7 @@ async function triggerMemorySummary() {
       content = data.content[0].text || '';
     }
     if (!content) return;
+    content = stripThinkTags(content);
 
     // 解析出长期记忆和核心记忆
     var summary = content;
@@ -6393,33 +6752,40 @@ async function triggerMemorySummaryWithTurns(turnsToSummarize) {
   }
 
   systemPrompt += '【长期记忆总结任务】\n\n';
-  systemPrompt += '请以 ' + charName + ' 的第一人称视角（使用"我"），将下方对话内容总结为一条新的记忆条目。\n\n';
-  systemPrompt += '格式要求：\n';
-  systemPrompt += '1. 直接输出总结文本，不加任何标题、编号、前缀或说明\n';
-  systemPrompt += '2. 使用第一人称"我"书写，视角始终是 ' + charName + '\n';
-  systemPrompt += '3. 涵盖：本轮对话中的重要事件、' + userName + ' 的言行与状态变化、双方互动与情感流动、' + charName + ' 的内心想法与决定\n';
-  systemPrompt += '4. 对话中标注了[当时状态]信息，请参考其中的地点、心情、思绪等来丰富记忆，但不要逐条罗列状态，而是自然融入叙述中\n';
-  systemPrompt += '5. 不需要频繁提及具体时间，除非时间本身是重要信息（如约定、纪念日等）\n';
-  systemPrompt += '6. 语言简练自然，控制在 100～200 字\n';
-  systemPrompt += '7. 这是一条独立的新记忆条目，不需要与以前的记忆合并或承接\n';
-  systemPrompt += '8. 对话中出现的"（发送了表情包）"或"（发送了图片）"只需简要提及情绪互动即可，不必详细描述表情包或图片本身\n';
+  systemPrompt += '你现在不是在"输出回复"，而是 ' + charName + ' 在独处时，用自己的方式记录今天与 ' + userName + ' 相处的片段。\n';
+  systemPrompt += '这份记录只有 ' + charName + ' 自己会看，语气应符合角色性格——可以真实、可以克制、可以带着未说出口的心事。\n\n';
+  systemPrompt += '【书写要求】\n';
+  systemPrompt += '1. 使用第一人称"我"，视角是 ' + charName + '，直接开始书写，不加标题、编号、引号、前缀\n';
+  systemPrompt += '2. 语气和笔触必须符合上方【角色设定】中 ' + charName + ' 的性格特征\n';
+  systemPrompt += '3. 必须涵盖以下层次（自然融入，不分点罗列）：\n';
+  systemPrompt += '   · 事件层：发生了什么、' + userName + ' 说了什么做了什么\n';
+  systemPrompt += '   · 观察层：' + charName + ' 注意到的 ' + userName + ' 的情绪/状态/言外之意\n';
+  systemPrompt += '   · 内心层：' + charName + ' 自己的真实想法、犹豫、克制\n';
+  systemPrompt += '   · 关系层：这次互动让两人关系发生了什么微妙变化\n';
+  systemPrompt += '4. 对话中的[当时状态]（地点、心情、动作、思绪等）自然融入叙述，不要照搬\n';
+  systemPrompt += '5. 表情包和图片只取其情绪意味，不描述图片本身\n';
+  systemPrompt += '6. 字数控制在 150～250 字\n';
+  systemPrompt += '7. 这是一条独立的新记忆条目，不需要承接之前的记忆\n';
+  systemPrompt += '8. 禁止使用"今天我们……，我感到……，最后……"这种流水账模板\n';
+  systemPrompt += '9. 不要过度浪漫化或戏剧化，保持角色应有的分寸感\n\n';
+
+  systemPrompt += '【书写示例】（仅参考格式和长度，不要模仿具体内容，风格必须匹配角色性格）\n';
+  systemPrompt += '"今天 ' + userName + ' 提起了一件旧事，语气很轻。我没有急着回应，只是安静地陪着。有些话不需要说出口，能在场就好——至少我是这么告诉自己的。"\n\n';
 
   if (state.memorySettings.coreMemoryEnabled) {
     systemPrompt += '\n【核心记忆提取任务】\n\n';
-    systemPrompt += '在完成长期记忆总结之后，请检查本轮对话中是否出现了以下类型的关键信息：\n';
-    systemPrompt += '- 重要承诺或约定\n';
-    systemPrompt += '- 关键身份信息（生日、职业、家庭关系等）\n';
-    systemPrompt += '- 重大情感转折或关系变化\n';
-    systemPrompt += '- 不可逆的重要事件\n\n';
-    systemPrompt += '如果有，请在总结文本之后空一行，写上"[[CORE]]"标记，然后每行一条核心记忆，格式为简短陈述句（10～30字）。\n';
-    systemPrompt += '如果没有值得提取的核心记忆，则不要写"[[CORE]]"标记，只输出长期记忆总结即可。\n\n';
-    systemPrompt += '示例输出格式（有核心记忆时）：\n';
-    systemPrompt += '今天和' + userName + '聊了很多关于……的事情，我感到……\n\n';
-    systemPrompt += '[[CORE]]\n';
-    systemPrompt += userName + '的生日是3月15日\n';
-    systemPrompt += userName + '答应下周一起去看展\n\n';
-    systemPrompt += '示例输出格式（无核心记忆时）：\n';
-    systemPrompt += '今天和' + userName + '随意聊了些日常琐事，气氛轻松……\n';
+    systemPrompt += '完成长期记忆后，检查本轮对话中是否出现以下类型的关键信息，符合的才提取：\n';
+    systemPrompt += '· 不可遗忘的身份信息（生日、家庭关系、重大病史、特定厌恶/喜好）\n';
+    systemPrompt += '· 双方明确的承诺或约定（包括 ' + charName + ' 答应过的事）\n';
+    systemPrompt += '· 关系性质的转折点（第一次牵手、第一次说出某个称呼、跨越某条边界等）\n';
+    systemPrompt += '· ' + userName + ' 留下的心理标记（特定的恐惧、信任的来源、安全感的开关）\n';
+    systemPrompt += '· ' + charName + ' 对自己设下的底线或做出的破例\n\n';
+    systemPrompt += '如果有，在总结文本后空一行，写"[[CORE]]"标记，每行一条，格式为简短客观陈述句（15～40字），不要用"我"字开头。\n';
+    systemPrompt += '没有则不写[[CORE]]标记。\n\n';
+    systemPrompt += '核心记忆示例：\n';
+    systemPrompt += userName + '的生日是X月X日，那天她不想被祝福\n';
+    systemPrompt += charName + '第一次在治疗外的场合握住了她的手\n';
+    systemPrompt += userName + '害怕冬天的雪，因为想起母亲离开那天\n';
   }
 
   try {
@@ -6449,6 +6815,7 @@ async function triggerMemorySummaryWithTurns(turnsToSummarize) {
       content = data.content[0].text || '';
     }
     if (!content) return false;
+    content = stripThinkTags(content);
 
     var summary = content;
     var coreLines = [];
@@ -6561,6 +6928,7 @@ function showMemorySummaryConfirm(summary, coreLines, coveredMessages) {
           id: genId('lt'),
           title: autoTitle,
           summary: editedSummary,
+          weight: 1.0,
           coveredMsgIds: coveredMessages.map(function(m) { return m.id; }),
           createdAt: Date.now(),
           updatedAt: Date.now()
@@ -6576,6 +6944,7 @@ function showMemorySummaryConfirm(summary, coreLines, coveredMessages) {
           id: genId('core'),
           title: coreText.length > 15 ? coreText.slice(0, 15) + '...' : coreText,
           content: coreText,
+          weight: 1.0,
           createdAt: Date.now(),
           updatedAt: Date.now()
         };
@@ -7150,20 +7519,29 @@ async function helpReply(msgId) {
   try {
     var charName = getCharName();
     var userName = getUserName();
-    var system = '你的唯一任务：根据对话上下文，以 ' + userName + ' 的身份写一条回复。\n\n';
+    var system = '你的唯一任务：根据对话上下文和背景设定，以 ' + userName + ' 的身份写一条回复。\n\n';
+    if (state.charMeta.description) {
+      system += '【角色设定（对话对象）】\n' + state.charMeta.description + '\n\n';
+    }
     if (state.userMeta.description) {
-      system += '关于 ' + userName + '：\n' + state.userMeta.description + '\n\n';
+      system += '【关于 ' + userName + '】\n' + state.userMeta.description + '\n\n';
+    }
+    var helpEnabledWB = state.worldBook.filter(function(e) { return e.enabled; });
+    if (helpEnabledWB.length > 0) {
+      system += '【世界观设定】\n' + helpEnabledWB.map(function(e) { return e.content; }).join('\n\n') + '\n\n';
+    }
+    if (state.coreMemory.length > 0) {
+      system += '【核心记忆】\n' + state.coreMemory.slice(0, 10).map(function(e) { return '- ' + e.content; }).join('\n') + '\n\n';
     }
     system += '铁律（违反任何一条即为失败）：\n';
-    system += '1. 直接输出回复正文，第一个字就是回复内容的开头\n';
-    system += '2. 禁止输出任何解释、注释、前缀、后缀、括号说明、引导语\n';
-    system += '3. 禁止输出"以下是回复"、"好的"、"这是建议"等任何元叙述\n';
-    system += '4. 禁止输出状态栏 [[STATUS]]...[[/STATUS]]\n';
-    system += '5. 使用「」包裹说出口的话，其余为动作描写\n';
-    system += '6. 控制在 30～150 字\n';
-    system += '7. 语气行为符合 ' + userName + ' 的人设，自然承接上文\n';
+    system += '1. 直接输出回复正文，第一个字就是回复内容\n';
+    system += '2. 禁止输出任何解释、注释、前缀、后缀、括号说明\n';
+    system += '3. 禁止输出状态栏 [[STATUS]]...[[/STATUS]]\n';
+    system += '4. 使用「」包裹说出口的话，其余为动作描写\n';
+    system += '5. 控制在 30～150 字\n';
+    system += '6. 语气行为符合 ' + userName + ' 的人设和世界观设定，自然承接上文\n';
     var nonWelcome = state.messages.filter(function(m) { return !m.isWelcome && !m.pending; });
-    var recent = nonWelcome.slice(-10);
+    var recent = nonWelcome.slice(-20);
     var contextMsgs = [];
     for (var i = 0; i < recent.length; i++) {
       var m = recent[i];
@@ -7187,6 +7565,7 @@ async function helpReply(msgId) {
     var content = '';
     if (data.choices && data.choices[0] && data.choices[0].message) content = data.choices[0].message.content || '';
     else if (data.content && Array.isArray(data.content) && data.content[0]) content = data.content[0].text || '';
+    content = stripThinkTags(content);
     if (!content.trim()) { showToast('AI 未返回内容', 'warning'); return; }
     var chatInput = document.getElementById('chat-input');
     chatInput.value = content.trim();
@@ -8161,6 +8540,10 @@ const customArea = document.getElementById('custom-font-area');
   coreToggle.classList.toggle('on', mem.coreMemoryEnabled);
   document.getElementById('core-mem-section').style.display = mem.coreMemoryEnabled ? '' : 'none';
 
+  // 记忆注入上限
+  document.getElementById('mem-lt-inject-limit').value = mem.ltInjectLimit || 30;
+  document.getElementById('mem-core-inject-limit').value = mem.coreInjectLimit || 20;
+
   refreshEmojiManageList();
   refreshCoreMemList();
   refreshLTMemList();
@@ -8264,8 +8647,13 @@ function scheduleApiSave() {
     state.apiSettings.frequencyPenalty = parseFloat(document.getElementById('api-freq').value);
     state.apiSettings.presencePenalty = parseFloat(document.getElementById('api-pres').value);
     state.apiSettings.format = format ? format.value : 'openai';
+    // 加密存储
+    var saveSettings = Object.assign({}, state.apiSettings);
     try {
-      await db.setSetting('settings_api', state.apiSettings);
+      saveSettings.apiKey = await encryptApiKey(state.apiSettings.apiKey);
+    } catch (_) {}
+    try {
+      await db.setSetting('settings_api', saveSettings);
     } catch (_) {}
   }, 500);
 }
@@ -8315,6 +8703,7 @@ function refreshEmojiManageList() {
       const id = btn.dataset.emojiDel;
       try {
         await db.deleteEmoji(id);
+        try { await db.deleteBlob('emoji_b64_' + id); } catch (_) {}
         state.emojis = state.emojis.filter(e => e.id !== id);
         refreshEmojiManageList();
         showToast('已删除', 'success');
@@ -8927,12 +9316,21 @@ function refreshCoreMemList() {
     var displayTitle = entry.title || '未命名';
     html += '<div class="mem-item" data-core-id="' + entry.id + '" style="flex-direction:column;align-items:stretch;gap:4px">' +
       '<div style="display:flex;align-items:center;gap:8px">' +
-      '<span style="font-size:14px;color:var(--text-primary);font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">· ' + escapeHtml(displayTitle) + '</span>' +
+      '<span class="mem-weight-dot ' + (typeof entry.weight === 'number' ? (entry.weight <= 0.5 ? 'w-05' : entry.weight <= 1.0 ? 'w-10' : entry.weight <= 1.5 ? 'w-15' : 'w-20') : 'w-10') + '" style="position:static;display:inline-block;margin-right:6px;flex-shrink:0"></span>' +
+      '<span style="font-size:14px;color:var(--text-primary);font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHtml(displayTitle) + '</span>' +
       '<button class="btn-icon-sm" data-core-expand="' + entry.id + '" title="展开/收起"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>' +
       '<button class="btn-icon-sm" data-core-edit="' + entry.id + '" title="编辑"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>' +
       '<button class="btn-icon-sm" data-core-del="' + entry.id + '" title="删除"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
       '</div>' +
-      '<div class="mem-expand-content" data-core-body="' + entry.id + '" style="display:none;font-size:13px;color:var(--text-secondary);line-height:1.6;padding:4px 0 0 12px;border-top:1px dashed var(--border);margin-top:4px">' + escapeHtml(entry.content) + '</div>' +
+      '<div class="mem-expand-content" data-core-body="' + entry.id + '" style="display:none;font-size:13px;color:var(--text-secondary);line-height:1.6;padding:4px 0 0 12px;border-top:1px dashed var(--border);margin-top:4px">' + escapeHtml(entry.content) +
+      '<div class="mem-weight-bar">' +
+      '<span class="mem-weight-label">权重：</span>' +
+      '<select class="mem-weight-select" data-core-weight="' + entry.id + '">' +
+      '<option value="0.5"' + ((typeof entry.weight === 'number' ? entry.weight : 1.0) === 0.5 ? ' selected' : '') + '>0.5 普通</option>' +
+      '<option value="1"' + ((typeof entry.weight === 'number' ? entry.weight : 1.0) === 1.0 ? ' selected' : '') + '>1.0 默认</option>' +
+      '<option value="1.5"' + ((typeof entry.weight === 'number' ? entry.weight : 1.0) === 1.5 ? ' selected' : '') + '>1.5 重要</option>' +
+      '<option value="2"' + ((typeof entry.weight === 'number' ? entry.weight : 1.0) === 2.0 ? ' selected' : '') + '>2.0 关键</option>' +
+      '</select></div></div>' +
       '</div>';
   }
   listEl.innerHTML = html;
@@ -8985,6 +9383,31 @@ function refreshCoreMemList() {
       }
     });
   });
+
+  // 核心记忆权重选择器
+  listEl.querySelectorAll('[data-core-weight]').forEach(function(sel) {
+    sel.addEventListener('change', async function() {
+      var id = sel.dataset.coreWeight;
+      var newWeight = parseFloat(sel.value);
+      if (isNaN(newWeight)) newWeight = 1.0;
+      var entry = state.coreMemory.find(function(e) { return e.id === id; });
+      if (!entry) return;
+      entry.weight = newWeight;
+      entry.updatedAt = Date.now();
+      try {
+        await db.updateCoreMemory(id, { weight: newWeight, updatedAt: entry.updatedAt });
+      } catch (_) {}
+      var item = listEl.querySelector('[data-core-id="' + id + '"]');
+      if (item) {
+        var dot = item.querySelector('.mem-weight-dot');
+        if (dot) {
+          dot.className = 'mem-weight-dot ' + (newWeight <= 0.5 ? 'w-05' : newWeight <= 1.0 ? 'w-10' : newWeight <= 1.5 ? 'w-15' : 'w-20');
+          dot.title = '权重 ' + newWeight;
+        }
+      }
+      showToast('权重已更新', 'success');
+    });
+  });
 }
 
 function refreshLTMemList() {
@@ -9000,14 +9423,26 @@ function refreshLTMemList() {
   for (var i = 0; i < state.longTermMemory.length; i++) {
     var entry = state.longTermMemory[i];
     var displayTitle = entry.title || ('记忆 #' + (i + 1));
+    var ltWeight = typeof entry.weight === 'number' ? entry.weight : 1.0;
+    var ltWClass = ltWeight <= 0.5 ? 'w-05' : ltWeight <= 1.0 ? 'w-10' : ltWeight <= 1.5 ? 'w-15' : 'w-20';
+    var ltWLabels = { '0.5': '普通', '1': '默认', '1.5': '重要', '2': '关键' };
     html += '<div class="mem-item" data-lt-id="' + entry.id + '" style="flex-direction:column;align-items:stretch;gap:4px">' +
-      '<div style="display:flex;align-items:center;gap:8px">' +
+      '<div style="display:flex;align-items:center;gap:6px">' +
+      '<span class="mem-weight-dot ' + ltWClass + '" title="权重 ' + ltWeight + '"></span>' +
       '<span style="font-size:14px;color:var(--text-primary);font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (i + 1) + '. ' + escapeHtml(displayTitle) + '</span>' +
       '<button class="btn-icon-sm" data-lt-expand="' + entry.id + '" title="展开/收起"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>' +
       '<button class="btn-icon-sm" data-lt-edit="' + entry.id + '" title="编辑"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>' +
       '<button class="btn-icon-sm" data-lt-del="' + entry.id + '" title="删除"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
       '</div>' +
-      '<div class="mem-expand-content" data-lt-body="' + entry.id + '" style="display:none;font-size:13px;color:var(--text-secondary);line-height:1.6;padding:4px 0 0 12px;border-top:1px dashed var(--border);margin-top:4px">' + escapeHtml(entry.summary) + '</div>' +
+      '<div class="mem-expand-content" data-lt-body="' + entry.id + '" style="display:none;font-size:13px;color:var(--text-secondary);line-height:1.6;padding:4px 0 0 12px;border-top:1px dashed var(--border);margin-top:4px">' + escapeHtml(entry.summary) +
+      '<div class="mem-weight-bar">' +
+      '<span class="mem-weight-label">权重：</span>' +
+      '<select class="mem-weight-select" data-lt-weight="' + entry.id + '">' +
+      '<option value="0.5"' + (ltWeight === 0.5 ? ' selected' : '') + '>0.5 普通</option>' +
+      '<option value="1"' + (ltWeight === 1.0 ? ' selected' : '') + '>1.0 默认</option>' +
+      '<option value="1.5"' + (ltWeight === 1.5 ? ' selected' : '') + '>1.5 重要</option>' +
+      '<option value="2"' + (ltWeight === 2.0 ? ' selected' : '') + '>2.0 关键</option>' +
+      '</select></div></div>' +
       '</div>';
   }
   listEl.innerHTML = html;
@@ -9058,6 +9493,32 @@ function refreshLTMemList() {
       } catch (err) {
         showToast('删除失败', 'error');
       }
+    });
+  });
+
+  // 权重选择器
+  listEl.querySelectorAll('[data-lt-weight]').forEach(function(sel) {
+    sel.addEventListener('change', async function() {
+      var id = sel.dataset.ltWeight;
+      var newWeight = parseFloat(sel.value);
+      if (isNaN(newWeight)) newWeight = 1.0;
+      var entry = state.longTermMemory.find(function(e) { return e.id === id; });
+      if (!entry) return;
+      entry.weight = newWeight;
+      entry.updatedAt = Date.now();
+      try {
+        await db.updateLongTermMemory(id, { weight: newWeight, updatedAt: entry.updatedAt });
+      } catch (_) {}
+      // 刷新圆点颜色
+      var item = listEl.querySelector('[data-lt-id="' + id + '"]');
+      if (item) {
+        var dot = item.querySelector('.mem-weight-dot');
+        if (dot) {
+          dot.className = 'mem-weight-dot ' + (newWeight <= 0.5 ? 'w-05' : newWeight <= 1.0 ? 'w-10' : newWeight <= 1.5 ? 'w-15' : 'w-20');
+          dot.title = '权重 ' + newWeight;
+        }
+      }
+      showToast('权重已更新', 'success');
     });
   });
 }
@@ -9466,7 +9927,9 @@ async function fetchModels() {
 }
 
 function applyApiPreset(preset) {
+  var currentKey = state.apiSettings.apiKey;
   state.apiSettings = { ...preset.settings };
+  if (!state.apiSettings.apiKey) state.apiSettings.apiKey = currentKey;
   document.getElementById('api-base-url').value = state.apiSettings.baseUrl;
   document.getElementById('api-key').value = state.apiSettings.apiKey;
   document.getElementById('api-model').value = state.apiSettings.model;
@@ -9632,7 +10095,7 @@ async function saveApiPreset() {
     name: name.trim(),
     settings: {
       baseUrl: document.getElementById('api-base-url').value.trim() || 'https://api.openai.com',
-      apiKey: document.getElementById('api-key').value.trim(),
+      apiKey: '',
       model: document.getElementById('api-model').value.trim(),
       temperature: parseFloat(document.getElementById('api-temp').value),
       maxTokens: parseInt(document.getElementById('api-max-tokens').value) || 2000,
@@ -9701,13 +10164,43 @@ async function refreshDataStats() {
     var totalSize = msgSize + ltSize + coreSize + wbSize + emojiSize + favSize + bookSize + blobSize + settingsSize;
 
     document.getElementById('ds-messages').textContent = msgCount + ' 条 (' + formatBytes(msgSize) + ')';
-    document.getElementById('ds-lt-mem').textContent = ltMem.length + ' 条';
-    document.getElementById('ds-core-mem').textContent = coreMem.length + ' 条';
+    // 长期记忆权重分布
+    var ltWeightCounts = { high: 0, normal: 0, low: 0 };
+    for (var _dwi = 0; _dwi < ltMem.length; _dwi++) {
+      var _dw = typeof ltMem[_dwi].weight === 'number' ? ltMem[_dwi].weight : 1.0;
+      if (_dw >= 1.5) ltWeightCounts.high++;
+      else if (_dw <= 0.5) ltWeightCounts.low++;
+      else ltWeightCounts.normal++;
+    }
+    var ltMemDetail = ltMem.length + ' 条';
+    if (ltMem.length > 0) {
+      var ltParts = [];
+      if (ltWeightCounts.high > 0) ltParts.push(ltWeightCounts.high + ' 高权重');
+      if (ltWeightCounts.low > 0) ltParts.push(ltWeightCounts.low + ' 低权重');
+      if (ltParts.length > 0) ltMemDetail += ' (' + ltParts.join(', ') + ')';
+    }
+    document.getElementById('ds-lt-mem').textContent = ltMemDetail;
+    // 核心记忆权重分布
+    var coreWeightCounts = { high: 0, normal: 0, low: 0 };
+    for (var _dcwi = 0; _dcwi < coreMem.length; _dcwi++) {
+      var _dcw = typeof coreMem[_dcwi].weight === 'number' ? coreMem[_dcwi].weight : 1.0;
+      if (_dcw >= 1.5) coreWeightCounts.high++;
+      else if (_dcw <= 0.5) coreWeightCounts.low++;
+      else coreWeightCounts.normal++;
+    }
+    var coreMemDetail = coreMem.length + ' 条';
+    if (coreMem.length > 0) {
+      var coreParts = [];
+      if (coreWeightCounts.high > 0) coreParts.push(coreWeightCounts.high + ' 高权重');
+      if (coreWeightCounts.low > 0) coreParts.push(coreWeightCounts.low + ' 低权重');
+      if (coreParts.length > 0) coreMemDetail += ' (' + coreParts.join(', ') + ')';
+    }
+    document.getElementById('ds-core-mem').textContent = coreMemDetail;
     document.getElementById('ds-worldbook').textContent = wb.length + ' 条';
     document.getElementById('ds-emojis').textContent = emojis.length + ' 个';
     document.getElementById('ds-favorites').textContent = favs.length + ' 条';
     document.getElementById('ds-books').textContent = books.length + ' 本 (' + formatBytes(bookSize) + ')';
-    document.getElementById('ds-phrases').textContent = state.quickPhrases.length + ' 条';
+    document.getElementById('ds-phrases').textContent = (state.quickPhrases ? state.quickPhrases.length : 0) + ' 条';
     document.getElementById('ds-blobs').textContent = blobCount + ' 项 (' + formatBytes(blobSize) + ')';
     document.getElementById('ds-total').textContent = formatBytes(totalSize);
 
@@ -9790,6 +10283,10 @@ async function deepCompress() {
   try {
     // ════ 1. 清理 orphan blob ════
     var knownBlobKeys = new Set(['char_avatar', 'user_avatar', 'page_bg']);
+    // 表情包缓存也是已知key
+    for (var _eki = 0; _eki < state.emojis.length; _eki++) {
+      knownBlobKeys.add('emoji_b64_' + state.emojis[_eki].id);
+    }
     var allBlobKeys = [];
     await new Promise(function(resolve) {
       var tx = db._tx('blobs', 'readonly');
@@ -10002,6 +10499,8 @@ async function clearAllData() {
     state.emojis = [];
     state.favorites = [];
     state.books = [];
+    state.quickPhrases = [];
+    state.quickPhraseFolders = [];
     state.readerState.currentBookId = null;
     var readerEl = document.getElementById('reader-float');
     if (readerEl) readerEl.classList.remove('open', 'zoomed');
@@ -10233,17 +10732,83 @@ async function exportTXT() {
 }
 async function importData(file) {
   try {
-    const text = await file.text();
-    const data = JSON.parse(text);
-    if (!data.version) {
-      showToast('无效的备份文件', 'error');
+    var text = await file.text();
+    var data = null;
+    try {
+      data = JSON.parse(text);
+    } catch (parseErr) {
+      showToast('文件不是有效的 JSON 格式', 'error');
       return;
     }
-    const confirmed = await showConfirm('导入将覆盖当前所有数据，确认继续？', true);
+
+    // 格式校验
+    if (!data || typeof data !== 'object') {
+      showToast('无效的备份文件：不是对象', 'error');
+      return;
+    }
+    if (!data.version || typeof data.version !== 'number') {
+      showToast('无效的备份文件：缺少版本号', 'error');
+      return;
+    }
+    // 校验核心字段类型
+    var arrayFields = ['messages', 'memory_lt', 'memory_core', 'worldbook', 'emojis', 'favorites', 'books'];
+    for (var i = 0; i < arrayFields.length; i++) {
+      var field = arrayFields[i];
+      if (data[field] !== undefined && !Array.isArray(data[field])) {
+        showToast('备份文件格式异常：' + field + ' 应为数组', 'error');
+        return;
+      }
+    }
+    if (data.settings !== undefined && (typeof data.settings !== 'object' || Array.isArray(data.settings))) {
+      showToast('备份文件格式异常：settings 应为对象', 'error');
+      return;
+    }
+    if (data.blobs !== undefined && (typeof data.blobs !== 'object' || Array.isArray(data.blobs))) {
+      showToast('备份文件格式异常：blobs 应为对象', 'error');
+      return;
+    }
+    if (data.wb_folders !== undefined && !Array.isArray(data.wb_folders)) {
+      showToast('备份文件格式异常：wb_folders 应为数组', 'error');
+      return;
+    }
+
+    // 校验消息条目结构（抽检前5条）
+    if (data.messages && data.messages.length > 0) {
+      var checkCount = Math.min(5, data.messages.length);
+      for (var ci = 0; ci < checkCount; ci++) {
+        var msg = data.messages[ci];
+        if (!msg || typeof msg !== 'object') {
+          showToast('备份文件格式异常：消息条目 #' + (ci + 1) + ' 无效', 'error');
+          return;
+        }
+        if (!msg.id || typeof msg.id !== 'string') {
+          showToast('备份文件格式异常：消息条目缺少有效 id', 'error');
+          return;
+        }
+        if (!msg.role || (msg.role !== 'user' && msg.role !== 'assistant')) {
+          showToast('备份文件格式异常：消息条目 role 无效', 'error');
+          return;
+        }
+      }
+    }
+
+    // 统计信息
+    var msgCount = data.messages ? data.messages.length : 0;
+    var memCount = (data.memory_lt ? data.memory_lt.length : 0) + (data.memory_core ? data.memory_core.length : 0);
+    var infoText = '导入将覆盖当前所有数据：\n';
+    infoText += '· ' + msgCount + ' 条消息\n';
+    infoText += '· ' + memCount + ' 条记忆\n';
+    if (data.worldbook) infoText += '· ' + data.worldbook.length + ' 条世界书\n';
+    if (data.emojis) infoText += '· ' + data.emojis.length + ' 个表情包\n';
+    if (data.books) infoText += '· ' + data.books.length + ' 本书籍\n';
+    infoText += '\n确认继续？';
+
+    var confirmed = await showConfirm(infoText, true);
     if (!confirmed) return;
+
     await db.importAll(data);
     showToast('数据已导入，正在刷新...', 'success');
-    setTimeout(() => location.reload(), 1000);
+    setTimeout(function() { location.reload(); }, 1000);
   } catch (err) {
     showToast('导入失败: ' + err.message, 'error');
   }
@@ -10377,7 +10942,13 @@ async function initApp() {
       await db.setSetting('char_meta', state.charMeta);
       await db.setSetting('user_meta', state.userMeta);
     } else {
-      if (apiSettings) Object.assign(state.apiSettings, apiSettings);
+      if (apiSettings) {
+      Object.assign(state.apiSettings, apiSettings);
+      // 解密 API Key
+      try {
+        state.apiSettings.apiKey = await decryptApiKey(state.apiSettings.apiKey);
+      } catch (_) {}
+    }
       if (memSettings) Object.assign(state.memorySettings, memSettings);
       if (pageSettings) Object.assign(state.pageSettings, pageSettings);
       if (charMeta) Object.assign(state.charMeta, charMeta);
@@ -10423,9 +10994,19 @@ setSplashProgress(75);
     // 恢复 pending 消息
     state.pendingMessages = state.messages.filter(m => m.pending);
 
-    // 加载记忆
+    // 加载记忆（兜底：旧数据可能没有 weight 字段）
     state.longTermMemory = await db.getLongTermMemory();
+    for (var _lwi = 0; _lwi < state.longTermMemory.length; _lwi++) {
+      if (typeof state.longTermMemory[_lwi].weight !== 'number') {
+        state.longTermMemory[_lwi].weight = 1.0;
+      }
+    }
     state.coreMemory = await db.getCoreMemory();
+    for (var _cwi = 0; _cwi < state.coreMemory.length; _cwi++) {
+      if (typeof state.coreMemory[_cwi].weight !== 'number') {
+        state.coreMemory[_cwi].weight = 1.0;
+      }
+    }
     state.worldBook = await db.getWorldBook();
     state.worldBook.sort(function(a, b) {
       var sa = typeof a.sortOrder === 'number' ? a.sortOrder : 999999;
@@ -10969,6 +11550,7 @@ document.addEventListener('DOMContentLoaded', () => {
       id: genId('core'),
       title: (title || '').trim() || '未命名',
       content: content.trim(),
+      weight: 1.0,
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
@@ -10992,6 +11574,7 @@ document.addEventListener('DOMContentLoaded', () => {
       id: genId('lt'),
       title: (ltTitle || '').trim() || '未命名',
       summary: summary.trim(),
+      weight: 1.0,
       coveredMsgIds: [],
       createdAt: Date.now(),
       updatedAt: Date.now()
@@ -11004,6 +11587,22 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       showToast('添加失败', 'error');
     }
+  });
+
+  // 记忆注入上限
+  document.getElementById('mem-lt-inject-limit').addEventListener('input', function(e) {
+    var val = parseInt(e.target.value);
+    if (isNaN(val) || val < 5) val = 5;
+    if (val > 200) val = 200;
+    state.memorySettings.ltInjectLimit = val;
+    scheduleMemSave();
+  });
+  document.getElementById('mem-core-inject-limit').addEventListener('input', function(e) {
+    var val = parseInt(e.target.value);
+    if (isNaN(val) || val < 5) val = 5;
+    if (val > 100) val = 100;
+    state.memorySettings.coreInjectLimit = val;
+    scheduleMemSave();
   });
 
   // 查看短期记忆
@@ -11081,7 +11680,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-refresh-stats').addEventListener('click', refreshDataStats);
 
   // 旧数据清理按钮
-  document.querySelectorAll('[datcleanup-days]').forEach(function(chip) {
+  document.querySelectorAll('[data-cleanup-days]').forEach(function(chip) {
     chip.addEventListener('click', function() {
       var days = chip.dataset.cleanupDays;
       if (days === 'custom') {
@@ -11283,6 +11882,18 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 // 快捷短语
   document.getElementById('btn-add-phrase').addEventListener('click', addQuickPhrase);
+  document.getElementById('btn-add-qp-folder').addEventListener('click', async function() {
+    var name = await showPrompt('新建短语文件夹', '', { placeholder: '请输入文件夹名称' });
+    if (name === null) return;
+    var trimmed = name.trim();
+    if (!trimmed) { showToast('名称不能为空', 'warning'); return; }
+    var folder = { id: genId('qpf'), name: trimmed, items: [], createdAt: Date.now() };
+    state.quickPhraseFolders.push(folder);
+    await saveQuickPhrases();
+    refreshQuickPhraseList();
+    renderQuickPhraseBar();
+    showToast('文件夹已创建', 'success');
+  });
   // beforeunload 清理 blob URLs
   window.addEventListener('beforeunload', () => {
     db.revokeAll();
@@ -11306,13 +11917,22 @@ async function loadQuickPhrases() {
     if (saved && Array.isArray(saved)) {
       state.quickPhrases = saved;
     }
-  } catch (_) {}
+    var savedFolders = await db.getSetting('quick_phrase_folders');
+    if (savedFolders && Array.isArray(savedFolders)) {
+      state.quickPhraseFolders = savedFolders;
+    } else {
+      state.quickPhraseFolders = [];
+    }
+  } catch (_) {
+    if (!state.quickPhraseFolders) state.quickPhraseFolders = [];
+  }
   renderQuickPhraseBar();
 }
 
 async function saveQuickPhrases() {
   try {
-    await db.setSetting('quick_phrases', state.quickPhrases);
+    await db.setSetting('quick_phrases', state.quickPhrases || []);
+    await db.setSetting('quick_phrase_folders', state.quickPhraseFolders || []);
   } catch (_) {}
 }
 
@@ -11351,13 +11971,30 @@ function renderQuickPhraseBar() {
   var scroll = document.getElementById('quick-phrase-scroll');
   if (!bar || !scroll) return;
 
-  // 先退出排序模式
   exitQpBarSortMode();
-
-  // 移除旧的事件代理（通过重建 scroll 内容实现）
   scroll.innerHTML = '';
 
-  if (state.quickPhrases.length === 0) {
+  var folders = state.quickPhraseFolders || [];
+  var allPhrases = state.quickPhrases || [];
+
+  var assignedIds = new Set();
+  for (var fi = 0; fi < folders.length; fi++) {
+    var items = folders[fi].items || [];
+    for (var ii = 0; ii < items.length; ii++) {
+      assignedIds.add(items[ii]);
+    }
+  }
+  var standaloneList = allPhrases.filter(function(p) { return !assignedIds.has(p.id); });
+
+  // 没有任何可显示的内容
+  var hasAnyContent = false;
+  for (var fc = 0; fc < folders.length; fc++) {
+    var fItems = (folders[fc].items || []).filter(function(itemId) {
+      return allPhrases.some(function(p) { return p.id === itemId; });
+    });
+    if (fItems.length > 0) { hasAnyContent = true; break; }
+  }
+  if (!hasAnyContent && standaloneList.length === 0) {
     bar.classList.remove('has-phrases');
     updateQuickPhraseLayout();
     return;
@@ -11365,10 +12002,27 @@ function renderQuickPhraseBar() {
 
   bar.classList.add('has-phrases');
   var html = '';
-  for (var i = 0; i < state.quickPhrases.length; i++) {
-    var p = state.quickPhrases[i];
-    html += '<div class="qp-chip" data-qp-idx="' + i + '" title="' + escapeHtml(p.content) + '">' + escapeHtml(p.title) + '</div>';
+
+  // 文件夹胶囊（只渲染有内容的）
+  for (var fIdx = 0; fIdx < folders.length; fIdx++) {
+    var folder = folders[fIdx];
+    var folderValidItems = (folder.items || []).filter(function(itemId) {
+      return allPhrases.some(function(p) { return p.id === itemId; });
+    });
+    if (folderValidItems.length === 0) continue;
+    html += '<div class="qp-chip qp-folder-chip" data-qp-folder-idx="' + fIdx + '" title="' + escapeHtml(folder.name) + '（' + folderValidItems.length + '个短语）">';
+    html += '<svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:1.5;fill:none;margin-right:2px;vertical-align:-1px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
+    html += escapeHtml(folder.name);
+    html += '</div>';
   }
+
+  // 独立短语胶囊（排除已归入文件夹的）
+  for (var si = 0; si < standaloneList.length; si++) {
+    var p = standaloneList[si];
+    var globalIdx = allPhrases.indexOf(p);
+    html += '<div class="qp-chip" data-qp-idx="' + globalIdx + '" title="' + escapeHtml(p.content) + '">' + escapeHtml(p.title) + '</div>';
+  }
+
   scroll.innerHTML = html;
   updateQuickPhraseLayout();
 }
@@ -11395,36 +12049,36 @@ function updateQuickPhraseLayout() {
 
   var longPressTimer = null;
 
-  // 点击代理
   scroll.addEventListener('click', function(e) {
     var chip = e.target.closest('.qp-chip');
     if (!chip) return;
 
-    var idx = parseInt(chip.dataset.qpIdx);
-    if (isNaN(idx)) return;
-
     // 排序模式
     if (_qpBarSortMode) {
-      handleQpBarSortClick(idx);
+      var idx = parseInt(chip.dataset.qpIdx);
+      if (!isNaN(idx)) handleQpBarSortClick(idx);
       return;
     }
 
-    // 正常点击：填入输入框
+    // 文件夹胶囊：展开浮层
+    var folderIdx = chip.dataset.qpFolderIdx;
+    if (folderIdx !== undefined) {
+      e.preventDefault();
+      e.stopPropagation();
+      showQpFolderPopup(parseInt(folderIdx), chip);
+      return;
+    }
+
+    // 普通短语胶囊：填入输入框
+    var idx = parseInt(chip.dataset.qpIdx);
+    if (isNaN(idx)) return;
     var phrase = state.quickPhrases[idx];
     if (!phrase) return;
     var input = document.getElementById('chat-input');
     if (!input) return;
-    // 关键：先 focus 再读光标位置，否则在 textarea 失焦时 selectionStart 不准
-    var hadFocus = (document.activeElement === input);
-    var cursorPos;
-    if (hadFocus && typeof input.selectionStart === 'number') {
-      cursorPos = input.selectionStart;
-    } else {
-      cursorPos = input.value.length;
-    }
+    var cursorPos = (document.activeElement === input && typeof input.selectionStart === 'number') ? input.selectionStart : input.value.length;
     var before = input.value.slice(0, cursorPos);
     var after = input.value.slice(cursorPos);
-    // 如果光标前不是空白且不是空，补一个空格分隔
     var needSpace = before.length > 0 && !/\s$/.test(before) && !/^\s/.test(phrase.content);
     var insertText = (needSpace ? ' ' : '') + phrase.content;
     input.value = before + insertText + after;
@@ -11461,15 +12115,99 @@ function updateQuickPhraseLayout() {
     if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
   });
 
-  // 阻止长按默认菜单
   scroll.addEventListener('contextmenu', function(e) {
     if (_qpBarSortMode) e.preventDefault();
   });
 })();
 
 // ── 胶囊栏排序 ──
+function showQpFolderPopup(folderIdx, anchorEl) {
+  closeQpFolderPopup();
+  var folder = state.quickPhraseFolders[folderIdx];
+  if (!folder) return;
+  var folderItems = (folder.items || []).map(function(itemId) {
+    return state.quickPhrases.find(function(p) { return p.id === itemId; });
+  }).filter(Boolean);
+  if (folderItems.length === 0) return;
+
+  var overlay = document.createElement('div');
+  overlay.className = 'wb-tag-overlay';
+  overlay.id = 'qp-folder-overlay';
+  overlay.addEventListener('click', function(e) {
+    e.stopPropagation();
+    closeQpFolderPopup();
+  });
+
+  var menu = document.createElement('div');
+  menu.className = 'wb-tag-menu';
+  menu.id = 'qp-folder-menu';
+  menu.style.maxHeight = '240px';
+  menu.style.overflowY = 'auto';
+
+  var menuTitle = document.createElement('div');
+  menuTitle.style.cssText = 'padding:8px 14px 4px;font-size:12px;color:var(--text-muted);border-bottom:1px solid var(--border);margin-bottom:4px';
+  menuTitle.textContent = folder.name;
+  menu.appendChild(menuTitle);
+
+  for (var i = 0; i < folderItems.length; i++) {
+    var item = folderItems[i];
+    var menuItem = document.createElement('div');
+    menuItem.className = 'wb-tag-menu-item';
+    menuItem.dataset.qpFolderItemId = item.id;
+    menuItem.textContent = item.title;
+    menuItem.title = item.content;
+    menu.appendChild(menuItem);
+  }
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(menu);
+
+  var rect = anchorEl.getBoundingClientRect();
+  var vw = window.innerWidth;
+  var vh = window.innerHeight;
+  var menuRect = menu.getBoundingClientRect();
+  var left = rect.left;
+  var top = rect.top - menuRect.height - 4;
+  if (top < 60) top = rect.bottom + 4;
+  if (left + menuRect.width > vw - 8) left = vw - menuRect.width - 8;
+  if (left < 8) left = 8;
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+
+  menu.querySelectorAll('[data-qp-folder-item-id]').forEach(function(el) {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var phraseId = el.dataset.qpFolderItemId;
+      var phrase = state.quickPhrases.find(function(p) { return p.id === phraseId; });
+      if (!phrase) return;
+      closeQpFolderPopup();
+      var input = document.getElementById('chat-input');
+      if (!input) return;
+      var cursorPos = (document.activeElement === input && typeof input.selectionStart === 'number') ? input.selectionStart : input.value.length;
+      var before = input.value.slice(0, cursorPos);
+      var after = input.value.slice(cursorPos);
+      var needSpace = before.length > 0 && !/\s$/.test(before) && !/^\s/.test(phrase.content);
+      var insertText = (needSpace ? ' ' : '') + phrase.content;
+      input.value = before + insertText + after;
+      autoResizeInput();
+      updateSendButton();
+      input.focus();
+      var newPos = cursorPos + insertText.length;
+      try { input.setSelectionRange(newPos, newPos); } catch (_) {}
+    });
+  });
+}
+
+function closeQpFolderPopup() {
+  var overlay = document.getElementById('qp-folder-overlay');
+  var menu = document.getElementById('qp-folder-menu');
+  if (overlay) overlay.remove();
+  if (menu) menu.remove();
+}
+
 function enterQpBarSortMode() {
-  if (state.quickPhrases.length < 2) {
+  var allPhrases = state.quickPhrases || [];
+  if (allPhrases.length < 2) {
     showToast('至少需要2个短语才能排序', 'warning');
     return;
   }
@@ -11477,17 +12215,23 @@ function enterQpBarSortMode() {
   _qpBarSortFirstIdx = -1;
 
   var scroll = document.getElementById('quick-phrase-scroll');
-  if (scroll) scroll.classList.add('qp-sorting');
+  if (!scroll) return;
+
+  // 排序模式：打平所有短语显示（不含文件夹本身，只显示短语）
+  var html = '';
+  for (var i = 0; i < allPhrases.length; i++) {
+    html += '<div class="qp-chip" data-qp-idx="' + i + '" title="' + escapeHtml(allPhrases[i].content) + '">' + escapeHtml(allPhrases[i].title) + '</div>';
+  }
+  scroll.innerHTML = html;
+  scroll.classList.add('qp-sorting');
 
   showToast('排序模式：点选两个胶囊交换位置，点空白处退出', 'warning', 4000);
 
-  // 延迟注册退出监听，避免和触发长按的事件冲突
   if (_qpBarExitHandler) {
     document.removeEventListener('pointerdown', _qpBarExitHandler, true);
     _qpBarExitHandler = null;
   }
   _qpBarExitHandler = function(e) {
-    // 点击短语栏内部、toast、确认弹窗都不退出
     if (e.target.closest('#quick-phrase-bar')) return;
     if (e.target.closest('.toast')) return;
     if (e.target.closest('.modal-overlay.open')) return;
@@ -11499,6 +12243,7 @@ function enterQpBarSortMode() {
 }
 
 function exitQpBarSortMode() {
+  var wasSorting = _qpBarSortMode;
   _qpBarSortMode = false;
   _qpBarSortFirstIdx = -1;
 
@@ -11510,38 +12255,45 @@ function exitQpBarSortMode() {
   var scroll = document.getElementById('quick-phrase-scroll');
   if (scroll) {
     scroll.classList.remove('qp-sorting');
-    scroll.querySelectorAll('.qp-chip').forEach(function(c) {
-      c.classList.remove('qp-sort-active');
-    });
+  }
+
+  // 退出排序模式后必须重新渲染正常的胶囊栏
+  if (wasSorting) {
+    renderQuickPhraseBar();
   }
 }
 
 function handleQpBarSortClick(idx) {
-  if (idx < 0 || idx >= state.quickPhrases.length) return;
+  var allPhrases = state.quickPhrases || [];
+  if (idx < 0 || idx >= allPhrases.length) return;
   var scroll = document.getElementById('quick-phrase-scroll');
   var chips = scroll ? scroll.querySelectorAll('.qp-chip') : [];
 
-  // 第一次选择
   if (_qpBarSortFirstIdx < 0) {
     _qpBarSortFirstIdx = idx;
     chips.forEach(function(c) { c.classList.remove('qp-sort-active'); });
-    if (chips[idx]) chips[idx].classList.add('qp-sort-active');
+    chips.forEach(function(c) {
+      if (parseInt(c.dataset.qpIdx) === idx) c.classList.add('qp-sort-active');
+    });
     return;
   }
 
-  // 点同一个取消
   if (_qpBarSortFirstIdx === idx) {
     _qpBarSortFirstIdx = -1;
     chips.forEach(function(c) { c.classList.remove('qp-sort-active'); });
     return;
   }
 
-  // 交换
-  var temp = state.quickPhrases[_qpBarSortFirstIdx];
-  state.quickPhrases[_qpBarSortFirstIdx] = state.quickPhrases[idx];
-  state.quickPhrases[idx] = temp;
+  var temp = allPhrases[_qpBarSortFirstIdx];
+  allPhrases[_qpBarSortFirstIdx] = allPhrases[idx];
+  allPhrases[idx] = temp;
   saveQuickPhrases();
-  exitQpBarSortMode();
+  _qpBarSortMode = false;
+  _qpBarSortFirstIdx = -1;
+  if (_qpBarExitHandler) {
+    document.removeEventListener('pointerdown', _qpBarExitHandler, true);
+    _qpBarExitHandler = null;
+  }
   renderQuickPhraseBar();
   showToast('已交换位置', 'success');
 }
@@ -11552,53 +12304,206 @@ function refreshQuickPhraseList() {
   var emptyEl = document.getElementById('qp-empty');
   if (!listEl || !emptyEl) return;
 
-  // 退出列表排序模式
   _qpListSortMode = false;
   _qpListSortFirstId = null;
 
-  if (state.quickPhrases.length === 0) {
+  var folders = state.quickPhraseFolders || [];
+  var allPhrases = state.quickPhrases || [];
+
+  if (allPhrases.length === 0 && folders.length === 0) {
     listEl.innerHTML = '';
     emptyEl.style.display = '';
     return;
   }
   emptyEl.style.display = 'none';
 
-  var html = '';
-  for (var i = 0; i < state.quickPhrases.length; i++) {
-    var p = state.quickPhrases[i];
-    var preview = p.content.length > 30 ? p.content.slice(0, 30) + '...' : p.content;
-    html += '<div class="qp-item" data-qp-id="' + p.id + '">';
-    html += '<span class="qp-title">' + escapeHtml(p.title) + '</span>';
-    html += '<span class="qp-preview">' + escapeHtml(preview) + '</span>';
-    html += '<button class="btn-icon-sm" data-qp-edit="' + p.id + '" title="编辑"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>';
-    html += '<button class="btn-icon-sm" data-qp-del="' + p.id + '" title="删除"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>';
-    html += '</div>';
+  var assignedIds = new Set();
+  for (var fi = 0; fi < folders.length; fi++) {
+    var items = folders[fi].items || [];
+    for (var ii = 0; ii < items.length; ii++) {
+      assignedIds.add(items[ii]);
+    }
   }
+  var standaloneList = allPhrases.filter(function(p) { return !assignedIds.has(p.id); });
+
+  var html = '';
+
+  for (var fIdx = 0; fIdx < folders.length; fIdx++) {
+    var folder = folders[fIdx];
+    var folderItems = (folder.items || []).map(function(itemId) {
+      return allPhrases.find(function(p) { return p.id === itemId; });
+    }).filter(Boolean);
+
+    html += '<div class="wb-folder" data-qpf-id="' + folder.id + '">';
+    html += '<div class="wb-folder-header" data-qpf-toggle="' + folder.id + '">';
+    html += '<svg class="wb-folder-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>';
+    html += '<svg class="wb-folder-icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
+    html += '<span class="wb-folder-name">' + escapeHtml(folder.name || '未命名') + '</span>';
+    html += '<span class="wb-folder-count">' + folderItems.length + '</span>';
+    html += '<div class="wb-folder-actions" onclick="event.stopPropagation()">';
+    html += '<button class="btn-icon-sm" data-qpf-rename="' + folder.id + '" title="重命名"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>';
+    html += '<button class="btn-icon-sm" data-qpf-del="' + folder.id + '" title="删除文件夹"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>';
+    html += '</div></div>';
+    html += '<div class="wb-folder-body">';
+
+    if (folderItems.length === 0) {
+      html += '<div class="wb-folder-empty">文件夹为空，可通过条目的标签按钮移入</div>';
+    } else {
+      for (var ki = 0; ki < folderItems.length; ki++) {
+        html += buildQpItemHTML(folderItems[ki]);
+      }
+    }
+    html += '</div></div>';
+  }
+
+  for (var si = 0; si < standaloneList.length; si++) {
+    html += buildQpItemHTML(standaloneList[si]);
+  }
+
   listEl.innerHTML = html;
+  bindQpListEvents(listEl);
+}
 
-  // 编辑
-  listEl.querySelectorAll('[data-qp-edit]').forEach(function(btn) {
-    btn.addEventListener('click', async function() {
-      var id = btn.dataset.qpEdit;
-      var phrase = state.quickPhrases.find(function(p) { return p.id === id; });
-      if (!phrase) return;
+function buildQpItemHTML(phrase) {
+  return '<div class="qp-item" data-qp-id="' + phrase.id + '">' +
+    '<span class="qp-title">' + escapeHtml(phrase.title) + '</span>' +
+    '<button class="btn-icon-sm" data-qp-expand="' + phrase.id + '" title="展开/收起"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>' +
+    '<button class="btn-icon-sm" data-qp-tag="' + phrase.id + '" title="移入文件夹"><svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></button>' +
+    '<button class="btn-icon-sm" data-qp-del="' + phrase.id + '" title="删除"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
+    '</div>';
+}
 
-      var newTitle = await showPrompt('编辑短语标题', phrase.title);
-      if (newTitle === null) return;
-      newTitle = newTitle.trim();
-      if (!newTitle) { showToast('标题不能为空', 'warning'); return; }
+function bindQpListEvents(listEl) {
+  // 文件夹展开折叠
+  listEl.querySelectorAll('[data-qpf-toggle]').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var folderId = el.dataset.qpfToggle;
+      var folderEl = listEl.querySelector('[data-qpf-id="' + folderId + '"]');
+      if (folderEl) folderEl.classList.toggle('open');
+    });
+  });
 
-      var newContent = await showPrompt('编辑短语内容', phrase.content, { multiline: true });
-      if (newContent === null) return;
-      newContent = newContent.trim();
-      if (!newContent) { showToast('内容不能为空', 'warning'); return; }
-
-      phrase.title = newTitle;
-      phrase.content = newContent;
+  // 文件夹重命名
+  listEl.querySelectorAll('[data-qpf-rename]').forEach(function(btn) {
+    btn.addEventListener('click', async function(e) {
+      e.stopPropagation();
+      var folderId = btn.dataset.qpfRename;
+      var folder = (state.quickPhraseFolders || []).find(function(f) { return f.id === folderId; });
+      if (!folder) return;
+      var newName = await showPrompt('重命名文件夹', folder.name);
+      if (newName === null) return;
+      var trimmed = newName.trim();
+      if (!trimmed) { showToast('名称不能为空', 'warning'); return; }
+      folder.name = trimmed;
       await saveQuickPhrases();
       refreshQuickPhraseList();
       renderQuickPhraseBar();
-      showToast('已更新', 'success');
+      showToast('已重命名', 'success');
+    });
+  });
+
+  // 文件夹删除
+  listEl.querySelectorAll('[data-qpf-del]').forEach(function(btn) {
+    btn.addEventListener('click', async function(e) {
+      e.stopPropagation();
+      var folderId = btn.dataset.qpfDel;
+      var folder = (state.quickPhraseFolders || []).find(function(f) { return f.id === folderId; });
+      if (!folder) return;
+      var hasItems = (folder.items || []).length > 0;
+      var msg = hasItems
+        ? '删除文件夹「' + (folder.name || '未命名') + '」？\n其中的 ' + folder.items.length + ' 个短语将变为独立条目'
+        : '确认删除空文件夹「' + (folder.name || '未命名') + '」？';
+      var confirmed = await showConfirm(msg, true);
+      if (!confirmed) return;
+      state.quickPhraseFolders = (state.quickPhraseFolders || []).filter(function(f) { return f.id !== folderId; });
+      await saveQuickPhrases();
+      refreshQuickPhraseList();
+      renderQuickPhraseBar();
+      showToast('文件夹已删除', 'success');
+    });
+  });
+
+  // 条目展开/收起（内联编辑）
+  listEl.querySelectorAll('[data-qp-expand]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var id = btn.dataset.qpExpand;
+      var item = listEl.querySelector('[data-qp-id="' + id + '"]');
+      if (!item) return;
+      var existingEditor = item.querySelector('.qp-inline-editor');
+      if (existingEditor) {
+        existingEditor.remove();
+        item.classList.remove('qp-has-editor');
+        var svg = btn.querySelector('svg');
+        if (svg) svg.style.transform = '';
+        return;
+      }
+      // 关闭其他已展开的编辑器
+      listEl.querySelectorAll('.qp-inline-editor').forEach(function(ed) {
+        if (ed.parentNode) ed.parentNode.classList.remove('qp-has-editor');
+        ed.remove();
+      });
+      listEl.querySelectorAll('[data-qp-expand] svg').forEach(function(s) { s.style.transform = ''; });
+
+      var phrase = (state.quickPhrases || []).find(function(p) { return p.id === id; });
+      if (!phrase) return;
+
+      var svg2 = btn.querySelector('svg');
+      if (svg2) svg2.style.transform = 'rotate(180deg)';
+      item.classList.add('qp-has-editor');
+
+      var editor = document.createElement('div');
+      editor.className = 'qp-inline-editor';
+      editor.style.cssText = 'padding:10px 0 6px;border-top:1px dashed var(--border);margin-top:8px;';
+      editor.innerHTML = '<div class="form-group" style="margin-bottom:10px">' +
+        '<label class="form-label">标题</label>' +
+        '<input class="form-input" data-qp-edit-title="' + id + '" value="' + escapeHtml(phrase.title) + '" placeholder="胶囊栏显示的标题">' +
+        '</div>' +
+        '<div class="form-group" style="margin-bottom:10px">' +
+        '<label class="form-label">内容</label>' +
+        '<textarea class="form-textarea" data-qp-edit-content="' + id + '" placeholder="点击胶囊后填入的文字" style="min-height:80px">' + escapeHtml(phrase.content) + '</textarea>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+        '<button class="btn-secondary" data-qp-edit-cancel="' + id + '">取消</button>' +
+        '<button class="btn-primary" data-qp-edit-save="' + id + '">保存</button>' +
+        '</div>';
+      item.appendChild(editor);
+
+      // 保存按钮
+      editor.querySelector('[data-qp-edit-save]').addEventListener('click', async function() {
+        var titleInput = editor.querySelector('[data-qp-edit-title]');
+        var contentInput = editor.querySelector('[data-qp-edit-content]');
+        var newTitle = titleInput ? titleInput.value.trim() : '';
+        var newContent = contentInput ? contentInput.value.trim() : '';
+        if (!newTitle) { showToast('标题不能为空', 'warning'); return; }
+        if (!newContent) { showToast('内容不能为空', 'warning'); return; }
+        phrase.title = newTitle;
+        phrase.content = newContent;
+        await saveQuickPhrases();
+        refreshQuickPhraseList();
+        renderQuickPhraseBar();
+        showToast('已更新', 'success');
+      });
+
+      // 取消按钮
+      editor.querySelector('[data-qp-edit-cancel]').addEventListener('click', function() {
+        editor.remove();
+        item.classList.remove('qp-has-editor');
+        if (svg2) svg2.style.transform = '';
+      });
+    });
+  });
+
+  // 标签（移入文件夹）
+  listEl.querySelectorAll('[data-qp-tag]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var targetBtn = e.target.closest('[data-qp-tag]');
+      if (!targetBtn) return;
+      var qpId = targetBtn.dataset.qpTag;
+      var rect = targetBtn.getBoundingClientRect();
+      showQpTagMenu(qpId, rect.left, rect.bottom + 4);
     });
   });
 
@@ -11608,13 +12513,109 @@ function refreshQuickPhraseList() {
       var id = btn.dataset.qpDel;
       var confirmed = await showConfirm('确认删除此快捷短语？', true);
       if (!confirmed) return;
-      state.quickPhrases = state.quickPhrases.filter(function(p) { return p.id !== id; });
+      var folders = state.quickPhraseFolders || [];
+      for (var fi = 0; fi < folders.length; fi++) {
+        var f = folders[fi];
+        f.items = (f.items || []).filter(function(itemId) { return itemId !== id; });
+      }
+      state.quickPhrases = (state.quickPhrases || []).filter(function(p) { return p.id !== id; });
       await saveQuickPhrases();
       refreshQuickPhraseList();
       renderQuickPhraseBar();
       showToast('已删除', 'success');
     });
   });
+}
+
+function showQpTagMenu(qpId, x, y) {
+  closeQpTagMenu();
+  var folders = state.quickPhraseFolders;
+
+  var currentFolderId = null;
+  for (var i = 0; i < folders.length; i++) {
+    if ((folders[i].items || []).indexOf(qpId) !== -1) {
+      currentFolderId = folders[i].id;
+      break;
+    }
+  }
+
+  var overlay = document.createElement('div');
+  overlay.className = 'wb-tag-overlay';
+  overlay.id = 'qp-tag-overlay';
+
+  var menu = document.createElement('div');
+  menu.className = 'wb-tag-menu';
+  menu.id = 'qp-tag-menu';
+
+  var html = '';
+  html += '<div class="wb-tag-menu-item' + (currentFolderId === null ? ' active' : '') + '" data-qp-target-folder="">';
+  html += '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  html += '独立条目</div>';
+
+  for (var j = 0; j < folders.length; j++) {
+    var f = folders[j];
+    var isActive = f.id === currentFolderId;
+    html += '<div class="wb-tag-menu-item' + (isActive ? ' active' : '') + '" data-qp-target-folder="' + f.id + '">';
+    html += '<svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
+    html += escapeHtml(f.name || '未命名') + '</div>';
+  }
+
+  if (folders.length === 0) {
+    html += '<div style="padding:12px 14px;font-size:12px;color:var(--text-muted);text-align:center">还没有文件夹，请先创建</div>';
+  }
+
+  menu.innerHTML = html;
+  document.body.appendChild(overlay);
+  document.body.appendChild(menu);
+
+  var vw = window.innerWidth;
+  var vh = window.innerHeight;
+  var menuRect = menu.getBoundingClientRect();
+  var left = x;
+  var top = y;
+  if (left + menuRect.width > vw - 8) left = vw - menuRect.width - 8;
+  if (left < 8) left = 8;
+  if (top + menuRect.height > vh - 8) top = y - menuRect.height - 40;
+  if (top < 8) top = 8;
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+
+  overlay.addEventListener('click', function(e) {
+    e.stopPropagation();
+    closeQpTagMenu();
+  });
+
+  menu.querySelectorAll('[data-qp-target-folder]').forEach(function(item) {
+    item.addEventListener('click', async function(e) {
+      e.stopPropagation();
+      var targetFolderId = item.dataset.qpTargetFolder;
+      closeQpTagMenu();
+      // 从所有文件夹中移除
+      for (var fi = 0; fi < state.quickPhraseFolders.length; fi++) {
+        var folder = state.quickPhraseFolders[fi];
+        folder.items = (folder.items || []).filter(function(id) { return id !== qpId; });
+      }
+      // 放入目标文件夹
+      if (targetFolderId) {
+        var targetFolder = state.quickPhraseFolders.find(function(f) { return f.id === targetFolderId; });
+        if (targetFolder) {
+          if (!targetFolder.items) targetFolder.items = [];
+          targetFolder.items.push(qpId);
+        }
+      }
+      await saveQuickPhrases();
+      refreshQuickPhraseList();
+      renderQuickPhraseBar();
+      showToast(targetFolderId ? '已移入文件夹' : '已移出文件夹', 'success');
+    });
+  });
+}
+
+function closeQpTagMenu() {
+  var overlay = document.getElementById('qp-tag-overlay');
+  var menu = document.getElementById('qp-tag-menu');
+  if (overlay) overlay.remove();
+  if (menu) menu.remove();
 }
 
 // ── 设置面板列表排序（长按触发） ──
@@ -11626,8 +12627,11 @@ function refreshQuickPhraseList() {
   listEl.addEventListener('pointerdown', function(e) {
     if (_qpListSortMode) return;
     if (e.target.closest('.btn-icon-sm')) return;
+    if (e.target.closest('.toggle')) return;
+    if (e.target.closest('.wb-folder-actions')) return;
     var item = e.target.closest('.qp-item');
-    if (!item) return;
+    var folderHeader = e.target.closest('.wb-folder-header');
+    if (!item && !folderHeader) return;
     if (timer) { clearTimeout(timer); timer = null; }
     timer = setTimeout(function() {
       timer = null;
@@ -11653,26 +12657,174 @@ function refreshQuickPhraseList() {
     if (timer) { clearTimeout(timer); timer = null; }
   });
 })();
+function buildQpFlatOrder() {
+  var result = [];
+  var folders = state.quickPhraseFolders || [];
+  var allPhrases = state.quickPhrases || [];
+  var assignedIds = new Set();
+  for (var fi = 0; fi < folders.length; fi++) {
+    var items = folders[fi].items || [];
+    for (var ii = 0; ii < items.length; ii++) {
+      assignedIds.add(items[ii]);
+    }
+  }
 
+  // 文件夹及其内容
+  for (var fIdx = 0; fIdx < folders.length; fIdx++) {
+    var folder = folders[fIdx];
+    result.push({ id: folder.id, type: 'folder' });
+    var fItems = folder.items || [];
+    for (var ki = 0; ki < fItems.length; ki++) {
+      var phrase = allPhrases.find(function(p) { return p.id === fItems[ki]; });
+      if (phrase) {
+        result.push({ id: phrase.id, type: 'entry-in-folder', folderId: folder.id });
+      }
+    }
+  }
+
+  // 独立条目
+  for (var si = 0; si < allPhrases.length; si++) {
+    if (!assignedIds.has(allPhrases[si].id)) {
+      result.push({ id: allPhrases[si].id, type: 'entry' });
+    }
+  }
+
+  return result;
+}
+
+function applyQpFlatOrder(flatList) {
+  var folders = state.quickPhraseFolders || [];
+  var allPhrases = state.quickPhrases || [];
+
+  // 重建文件夹map和短语map
+  var folderMap = {};
+  for (var fi = 0; fi < folders.length; fi++) {
+    folderMap[folders[fi].id] = folders[fi];
+  }
+  var phraseMap = {};
+  for (var pi = 0; pi < allPhrases.length; pi++) {
+    phraseMap[allPhrases[pi].id] = allPhrases[pi];
+  }
+
+  // 按 flatList 顺序重建
+  var newFolders = [];
+  var newFolderItems = {};
+  var newStandalone = [];
+  var seenPhraseIds = new Set();
+
+  for (var i = 0; i < flatList.length; i++) {
+    var item = flatList[i];
+    if (item.type === 'folder') {
+      var folder = folderMap[item.id];
+      if (folder) {
+        newFolders.push(folder);
+        newFolderItems[item.id] = [];
+      }
+    } else if (item.type === 'entry-in-folder') {
+      if (newFolderItems[item.folderId]) {
+        newFolderItems[item.folderId].push(item.id);
+        seenPhraseIds.add(item.id);
+      }
+    } else if (item.type === 'entry') {
+      newStandalone.push(item.id);
+      seenPhraseIds.add(item.id);
+    }
+  }
+
+  // 更新文件夹内容
+  for (var fIdx = 0; fIdx < newFolders.length; fIdx++) {
+    var fId = newFolders[fIdx].id;
+    if (newFolderItems[fId]) {
+      newFolders[fIdx].items = newFolderItems[fId];
+    }
+  }
+
+  // 按新顺序重组 quickPhrases 数组
+  var reordered = [];
+  var addedIds = new Set();
+
+  // 先按文件夹内条目顺序
+  for (var fj = 0; fj < newFolders.length; fj++) {
+    var fitems = newFolders[fj].items || [];
+    for (var ki = 0; ki < fitems.length; ki++) {
+      var ph = phraseMap[fitems[ki]];
+      if (ph && !addedIds.has(ph.id)) {
+        reordered.push(ph);
+        addedIds.add(ph.id);
+      }
+    }
+  }
+  // 再加独立条目
+  for (var sj = 0; sj < newStandalone.length; sj++) {
+    var sp = phraseMap[newStandalone[sj]];
+    if (sp && !addedIds.has(sp.id)) {
+      reordered.push(sp);
+      addedIds.add(sp.id);
+    }
+  }
+  // 兜底：还有遗漏的加到末尾
+  for (var zz = 0; zz < allPhrases.length; zz++) {
+    if (!addedIds.has(allPhrases[zz].id)) {
+      reordered.push(allPhrases[zz]);
+    }
+  }
+
+  state.quickPhraseFolders = newFolders;
+  state.quickPhrases = reordered;
+}
 function renderQpListSortView() {
   var listEl = document.getElementById('qp-list');
   var emptyEl = document.getElementById('qp-empty');
   if (!listEl) return;
   if (emptyEl) emptyEl.style.display = 'none';
 
+  var allPhrases = state.quickPhrases || [];
+  var folders = state.quickPhraseFolders || [];
+
+  // 构建扁平排序列表（和世界书一样）
+  var flatItems = buildQpFlatOrder();
+  if (flatItems.length < 2) {
+    _qpListSortMode = false;
+    _qpListSortFirstId = null;
+    refreshQuickPhraseList();
+    showToast('至少需要2个可排序项目', 'warning');
+    return;
+  }
+
   var html = '<div class="qp-sort-bar">';
-  html += '<span>点击条目选中，再点另一项交换</span>';
+  html += '<span>点击任意条目或文件夹选中，再点另一项交换位置</span>';
   html += '<button class="btn-secondary" id="qp-list-sort-done" style="flex-shrink:0;font-size:12px;padding:4px 12px">完成</button>';
   html += '</div>';
 
-  for (var i = 0; i < state.quickPhrases.length; i++) {
-    var p = state.quickPhrases[i];
-    var activeClass = (p.id === _qpListSortFirstId) ? ' qp-list-sort-active' : '';
-    var preview = p.content.length > 30 ? p.content.slice(0, 30) + '...' : p.content;
-    html += '<div class="qp-item' + activeClass + '" data-qp-sort-id="' + p.id + '" style="cursor:pointer">';
-    html += '<span class="qp-title">' + escapeHtml(p.title) + '</span>';
-    html += '<span class="qp-preview">' + escapeHtml(preview) + '</span>';
-    html += '</div>';
+  for (var i = 0; i < flatItems.length; i++) {
+    var fi = flatItems[i];
+    var activeClass = (fi.id === _qpListSortFirstId) ? ' qp-list-sort-active' : '';
+
+    if (fi.type === 'folder') {
+      var folder = folders.find(function(f) { return f.id === fi.id; });
+      var folderName = folder ? (folder.name || '未命名') : '未命名';
+      var folderCount = folder ? (folder.items || []).length : 0;
+      html += '<div class="qp-item' + activeClass + '" data-qp-sort-id="' + fi.id + '" data-qp-sort-type="folder" style="cursor:pointer;background:var(--bg-surface);border-left:3px solid var(--pine);padding-left:9px">';
+      html += '<svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--text-secondary);stroke-width:1.5;fill:none;flex-shrink:0"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
+      html += '<span class="qp-title" style="font-weight:500">' + escapeHtml(folderName) + '</span>';
+      html += '<span class="qp-sort-folder-label">' + folderCount + ' 项</span>';
+      html += '</div>';
+    } else {
+      var phrase = allPhrases.find(function(p) { return p.id === fi.id; });
+      if (!phrase) continue;
+      var indent = fi.folderId ? 'padding-left:24px;' : '';
+      var folderTag = '';
+      if (fi.folderId) {
+        var parentFolder = folders.find(function(f) { return f.id === fi.folderId; });
+        if (parentFolder) {
+          folderTag = '<span class="qp-sort-folder-label">' + escapeHtml(parentFolder.name || '未命名') + '</span>';
+        }
+      }
+      html += '<div class="qp-item' + activeClass + '" data-qp-sort-id="' + fi.id + '" data-qp-sort-type="' + fi.type + '" style="cursor:pointer;' + indent + '">';
+      html += '<span class="qp-title">' + escapeHtml(phrase.title) + '</span>';
+      html += folderTag;
+      html += '</div>';
+    }
   }
   listEl.innerHTML = html;
 
@@ -11683,37 +12835,41 @@ function renderQpListSortView() {
       _qpListSortMode = false;
       _qpListSortFirstId = null;
       refreshQuickPhraseList();
+      renderQuickPhraseBar();
     });
   }
 
-  // 条目点击
+  // 条目点击交换
   listEl.querySelectorAll('[data-qp-sort-id]').forEach(function(item) {
     item.addEventListener('click', function(ev) {
-      // 排序模式下点击只用于交换，阻止其他事件
       ev.stopPropagation();
       var clickedId = item.dataset.qpSortId;
 
-      // 第一次选择
       if (!_qpListSortFirstId) {
         _qpListSortFirstId = clickedId;
         renderQpListSortView();
         return;
       }
 
-      // 点同一个取消
       if (_qpListSortFirstId === clickedId) {
         _qpListSortFirstId = null;
         renderQpListSortView();
         return;
       }
 
-      // 交换
-      var idx1 = state.quickPhrases.findIndex(function(p) { return p.id === _qpListSortFirstId; });
-      var idx2 = state.quickPhrases.findIndex(function(p) { return p.id === clickedId; });
-      if (idx1 === -1 || idx2 === -1) return;
-      var temp = state.quickPhrases[idx1];
-      state.quickPhrases[idx1] = state.quickPhrases[idx2];
-      state.quickPhrases[idx2] = temp;
+      // 执行交换
+      var idx1 = flatItems.findIndex(function(f) { return f.id === _qpListSortFirstId; });
+      var idx2 = flatItems.findIndex(function(f) { return f.id === clickedId; });
+      if (idx1 === -1 || idx2 === -1) {
+        _qpListSortFirstId = null;
+        renderQpListSortView();
+        return;
+      }
+
+      var temp = flatItems[idx1];
+      flatItems[idx1] = flatItems[idx2];
+      flatItems[idx2] = temp;
+      applyQpFlatOrder(flatItems);
       saveQuickPhrases();
       renderQuickPhraseBar();
       _qpListSortFirstId = null;
