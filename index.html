@@ -1936,12 +1936,6 @@ a { color:inherit; text-decoration:none; }
   flex:1; font-size:14px; color:var(--text-primary);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
-.qp-item .qp-preview {
-  font-size:12px; color:var(--text-muted);
-  max-width:120px;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  flex-shrink:0;
-}
 .qp-item.qp-list-sort-active {
   outline:2px solid var(--pine);
   outline-offset:2px;
@@ -2553,6 +2547,13 @@ a { color:inherit; text-decoration:none; }
       <button class="time-quick-btn" data-time-add="7">+1周</button>
       <button class="time-quick-btn" data-time-add="30">+1月</button>
       <button class="time-quick-btn" data-time-add="-1">-1天</button>
+    </div>
+    <div style="margin-bottom:14px">
+      <button class="btn-primary" id="btn-time-apply-now" style="width:100%;padding:8px 0;font-size:13px">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;stroke-width:2;fill:none;margin-right:4px;vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg>
+        更新状态栏时间
+      </button>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.5">修改日期后点击此按钮，选择近三轮状态栏中的一条，将当前日期写入其「时间」字段。</p>
     </div>
     <div class="time-log-section">
       <div class="time-log-title">
@@ -3996,7 +3997,9 @@ const state = {
   emojis: [],
   favorites: [],
   books: [],
+  quickPhrases: [],
   quickPhraseFolders: [],
+  globalTime: { date: null, logs: [] },
   readerState: {
     currentBookId: null,
     currentPage: 1,
@@ -4103,11 +4106,7 @@ function getMsgTimeDisplay(timestamp) {
   if (state.apiSettings.enableRealTime) {
     return formatTimestamp(timestamp);
   }
-  var globalDate = getGlobalDateFormatted();
-  var d = new Date(timestamp);
-  var h = String(d.getHours()).padStart(2, '0');
-  var mi = String(d.getMinutes()).padStart(2, '0');
-  return globalDate + ' ' + h + ':' + mi;
+  return getGlobalDateFormatted();
 }
 function formatTimestamp(ts) {
   var d = new Date(ts);
@@ -5828,13 +5827,13 @@ Core Rules:
     }
     system += '[Time System · Fixed Date + Natural Time Flow]\n';
     system += 'FIXED DATE (managed externally, NOT by you): ' + globalDateStr + '\n';
-    system += '- Every message has a virtual timestamp in [YYYY/MM/DD HH:MM] brackets showing when it was sent\n';
+    system += '- Every message has a virtual date tag in [YYYY/MM/DD] brackets showing which day it belongs to\n';
     system += 'IRON RULES for the 时间 field in [[STATUS]]:\n';
     system += '1. The date portion MUST be exactly "' + globalDateStr + '" — you MUST NOT change the year, month, or day under any circumstances\n';
     system += '2. You only control the HH:MM portion — let it flow naturally based on the conversation (a few minutes to a couple hours)\n';
     system += '3. Format: ' + globalDateStr + ' HH:MM\n';
     system += '4. Do NOT advance the date even if the story implies time passing across days — the date is controlled externally\n';
-    system += '5. Refer to the timestamps on each message to understand the pace of conversation\n';
+    system += '5. The [YYYY/MM/DD] tag on each message shows which day it belongs to; use it to track date context\n';
     if (lastTimeValue) {
       // 提取上次的 HH:MM 供参考
       var lastHHMM = lastTimeValue.replace(/^[\d/]+\s*/, '');
@@ -6266,8 +6265,7 @@ async function receiveReply() {
       state.messages.push(replyMsg);
       try { await db.addMessage(replyMsg); } catch (err) { showToast('保存回复失败: ' + err.message, 'error'); }
       appendMessageElement(replyMsg);
-      // 检测AI回复中的时间跳跃
-      checkAndAdvanceTime(replyMsg.rawText, 'assistant');
+      // AI 回复不自动触发时间跳跃（避免误判描述性文字）
       scrollToBottom();
       // 处理重回版本数据
       if (state._regenVersionData) {
@@ -6662,8 +6660,7 @@ async function receiveReply() {
 
     scrollToBottom();
 
-    // 检测AI回复中的时间跳跃
-    checkAndAdvanceTime(replyMsg.rawText, 'assistant');
+// AI 回复不自动触发时间跳跃（避免误判描述性文字）
     // 检查记忆触发
     await checkMemoryTrigger();
 
@@ -7247,6 +7244,7 @@ function showMemorySummaryConfirm(summary, coreLines, coveredMessages) {
       cancelBtn.removeEventListener('click', onCancel);
       textareaEl.style.minHeight = '';
       descEl.style.whiteSpace = '';
+      descEl.style.display = 'none';
       // 恢复按钮文字
       okBtn.textContent = '确认';
       cancelBtn.textContent = '取消';
@@ -10877,6 +10875,8 @@ async function clearAllData() {
     document.documentElement.style.setProperty('--statusbar-height', '0px');
     updateTopBar();
     renderAllMessages();
+    renderQuickPhraseBar();
+    updateTimeSidebarDisplay();
     closeSettingsModal();
     showToast('所有数据已清除', 'success');
     // 播放欢迎消息
@@ -10937,6 +10937,7 @@ async function clearAllMessages() {
     document.documentElement.style.setProperty('--statusbar-height', '0px');
     renderAllMessages();
     updateSendButton();
+    updateTimeSidebarDisplay();
     showToast('对话记录已清空', 'success');
     await playWelcomeMessage();
   } catch (err) {
@@ -12279,6 +12280,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!isNaN(days)) addGlobalDays(days);
     });
   });
+  document.getElementById('btn-time-apply-now').addEventListener('click', applyTimeToLastStatus);
   document.getElementById('btn-clear-time-log').addEventListener('click', async function() {
     var confirmed = await showConfirm('确认清空所有时间变更记录？');
     if (!confirmed) return;
@@ -12309,8 +12311,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // ══════════════════════════════════════════════════════
 // 快捷短语系统
 // ══════════════════════════════════════════════════════
-state.quickPhrases = [];
-
 var _qpBarSortMode = false;
 var _qpBarSortFirstIdx = -1;
 var _qpBarExitHandler = null;
@@ -12773,11 +12773,8 @@ function refreshQuickPhraseList() {
 }
 
 function buildQpItemHTML(phrase) {
-  var preview = phrase.content || '';
-  if (preview.length > 30) preview = preview.slice(0, 30) + '...';
   return '<div class="qp-item" data-qp-id="' + phrase.id + '">' +
     '<span class="qp-title">' + escapeHtml(phrase.title) + '</span>' +
-    '<span class="qp-preview">' + escapeHtml(preview) + '</span>' +
     '<button class="btn-icon-sm" data-qp-expand="' + phrase.id + '" title="展开/收起"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>' +
     '<button class="btn-icon-sm" data-qp-tag="' + phrase.id + '" title="移入文件夹"><svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></button>' +
     '<button class="btn-icon-sm" data-qp-del="' + phrase.id + '" title="删除"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
@@ -13058,11 +13055,6 @@ function closeQpTagMenu() {
 // ══════════════════════════════════════════════════════
 // 全局时间系统
 // ══════════════════════════════════════════════════════
-state.globalTime = {
-  date: null, // 'YYYY-MM-DD' 格式
-  logs: []    // [{from, to, reason, timestamp}]
-};
-
 function getGlobalDateStr() {
   if (!state.globalTime.date) return '';
   return state.globalTime.date.replace(/-/g, '/');
@@ -13205,8 +13197,89 @@ function openTimeSidebar() {
     btn.style.opacity = isRealTime ? '0.4' : '';
     btn.style.pointerEvents = isRealTime ? 'none' : '';
   });
+  var applyBtn = document.getElementById('btn-time-apply-now');
+  if (applyBtn) {
+    applyBtn.disabled = isRealTime;
+    applyBtn.style.opacity = isRealTime ? '0.4' : '';
+    applyBtn.style.pointerEvents = isRealTime ? 'none' : '';
+  }
 }
+async function applyTimeToLastStatus() {
+  var currentDateStr = getGlobalDateFormatted();
+  if (!currentDateStr) {
+    showToast('当前日期为空', 'warning');
+    return;
+  }
 
+  var recentStatuses = [];
+  for (var i = state.messages.length - 1; i >= 0; i--) {
+    var msg = state.messages[i];
+    if (msg.role === 'assistant' && msg.status && !msg.isWelcome) {
+      recentStatuses.unshift({ msg: msg, index: i });
+      if (recentStatuses.length >= 3) break;
+    }
+  }
+
+  if (recentStatuses.length === 0) {
+    showToast('没有找到可更新的状态栏', 'warning');
+    return;
+  }
+
+  var selectedIdx = recentStatuses.length - 1;
+
+  if (recentStatuses.length > 1) {
+    var options = [];
+    for (var j = 0; j < recentStatuses.length; j++) {
+      var entry = recentStatuses[j];
+      var oldTime = entry.msg.status['时间'] || '未知';
+      var label = (j === recentStatuses.length - 1) ? '[最新] ' : '[#' + (j + 1) + '] ';
+      label += oldTime;
+      if (entry.msg.timestamp) {
+        label += '  (' + formatTimestamp(entry.msg.timestamp) + ')';
+      }
+      options.push(label);
+    }
+
+    var promptText = '选择要更新时间的状态栏（输入序号 1-' + recentStatuses.length + '）：\n\n';
+    for (var k = 0; k < options.length; k++) {
+      promptText += (k + 1) + '. ' + options[k] + '\n';
+    }
+
+    var choice = await showPrompt('选择状态栏', String(recentStatuses.length), {
+      placeholder: '输入序号 1-' + recentStatuses.length,
+      description: promptText
+    });
+    if (choice === null) return;
+    var choiceNum = parseInt(choice);
+    if (isNaN(choiceNum) || choiceNum < 1 || choiceNum > recentStatuses.length) {
+      showToast('无效的序号', 'warning');
+      return;
+    }
+    selectedIdx = choiceNum - 1;
+  }
+
+  var target = recentStatuses[selectedIdx];
+  var targetMsg = target.msg;
+
+  var oldTimeValue = targetMsg.status['时间'] || '';
+  var hhmmMatch = oldTimeValue.match(/(\d{1,2}:\d{2})/);
+  var hhmm = hhmmMatch ? ' ' + hhmmMatch[1] : '';
+
+  var newTimeValue = currentDateStr + hhmm;
+  targetMsg.status['时间'] = newTimeValue;
+
+  try {
+    await db.updateMessage(targetMsg.id, { status: targetMsg.status });
+  } catch (_) {}
+
+  var isLatest = (selectedIdx === recentStatuses.length - 1);
+  if (isLatest) {
+    updateStatusBar(targetMsg.status);
+  }
+
+  renderAllMessages();
+  showToast('已更新：' + newTimeValue + (isLatest ? '' : '（历史状态栏）'), 'success');
+}
 function closeTimeSidebar() {
   document.getElementById('time-sidebar-panel').classList.remove('open');
   document.getElementById('time-sidebar-overlay').classList.remove('open');
@@ -13215,37 +13288,66 @@ function closeTimeSidebar() {
 // ── 对话中自动检测时间跳跃关键词 ──
 function detectTimeAdvance(text) {
   if (!text) return null;
-  var patterns = [
-    { re: /(\d+)\s*天[后过之]/, unit: 1 },
-    { re: /(\d+)\s*日[后过之]/, unit: 1 },
-    { re: /(\d+)\s*夜[后过之]/, unit: 1 },
-    { re: /(\d+)\s*[个]?星期[后过之]/, unit: 7 },
-    { re: /(\d+)\s*[个]?周[后过之]/, unit: 7 },
-    { re: /(\d+)\s*[个]?月[后过之]/, unit: 30 },
-    { re: /(\d+)\s*[个]?年[后过之]/, unit: 365 },
-    { re: /过了(\d+)\s*天/, unit: 1 },
-    { re: /过了(\d+)\s*夜/, unit: 1 },
-    { re: /过了(\d+)\s*[个]?月/, unit: 30 },
-    { re: /过了(\d+)\s*[个]?星期/, unit: 7 },
-    { re: /过了(\d+)\s*[个]?周/, unit: 7 },
-    { re: /过了(\d+)\s*[个]?年/, unit: 365 },
-    { re: /第二天/, unit: 1, fixed: 1 },
-    { re: /次日/, unit: 1, fixed: 1 },
-    { re: /翌日/, unit: 1, fixed: 1 },
-    { re: /隔天/, unit: 1, fixed: 1 },
-    { re: /隔日/, unit: 1, fixed: 1 }
+  var clean = text.replace(/\[emo:[^\]]+\]/g, '').replace(/\[图片:[^\]]*\]/g, '').trim();
+  if (!clean) return null;
+
+  var fixedPatterns = [
+    { re: /(?:^|[，。！？\s（(])第二天/m, days: 1, label: '第二天' },
+    { re: /(?:^|[，。！？\s（(])次日/m, days: 1, label: '次日' },
+    { re: /(?:^|[，。！？\s（(])翌日/m, days: 1, label: '翌日' },
+    { re: /(?:^|[，。！？\s（(])隔天/m, days: 1, label: '隔天' },
+    { re: /(?:^|[，。！？\s（(])隔日/m, days: 1, label: '隔日' }
   ];
-  for (var i = 0; i < patterns.length; i++) {
-    var p = patterns[i];
-    var match = text.match(p.re);
-    if (match) {
-      var num = p.fixed || parseInt(match[1]);
-      if (isNaN(num) || num <= 0 || num > 3650) continue;
-      var totalDays = num * p.unit;
-      var reason = match[0];
-      return { days: totalDays, reason: reason };
+
+  var numPatterns = [
+    { re: /(?:^|[，。！？\s（(])(\d{1,3})\s*天[后过之]/m, unit: 1 },
+    { re: /(?:^|[，。！？\s（(])(\d{1,3})\s*日[后过之]/m, unit: 1 },
+    { re: /(?:^|[，。！？\s（(])(\d{1,3})\s*夜[后过之]/m, unit: 1 },
+    { re: /(?:^|[，。！？\s（(])(\d{1,3})\s*[个]?星期[后过之]/m, unit: 7 },
+    { re: /(?:^|[，。！？\s（(])(\d{1,3})\s*[个]?周[后过之]/m, unit: 7 },
+    { re: /(?:^|[，。！？\s（(])(\d{1,3})\s*[个]?月[后过之]/m, unit: 30 },
+    { re: /(?:^|[，。！？\s（(])过了\s*(\d{1,3})\s*天/m, unit: 1 },
+    { re: /(?:^|[，。！？\s（(])过了\s*(\d{1,3})\s*夜/m, unit: 1 },
+    { re: /(?:^|[，。！？\s（(])过了\s*(\d{1,3})\s*[个]?星期/m, unit: 7 },
+    { re: /(?:^|[，。！？\s（(])过了\s*(\d{1,3})\s*[个]?周/m, unit: 7 },
+    { re: /(?:^|[，。！？\s（(])过了\s*(\d{1,3})\s*[个]?月/m, unit: 30 }
+  ];
+
+  var excludeContexts = [
+    /等了\s*\d/,
+    /已经\s*\d+\s*天/,
+    /那是\s*\d+\s*天/,
+    /记得\s*\d+\s*天/,
+    /大约\s*\d+\s*天/,
+    /大概\s*\d+\s*天/,
+    /差不多\s*\d+\s*天/,
+    /需要\s*\d+\s*天/,
+    /要\s*\d+\s*天才/
+  ];
+
+  for (var ei = 0; ei < excludeContexts.length; ei++) {
+    if (excludeContexts[ei].test(clean)) return null;
+  }
+
+  for (var fi = 0; fi < fixedPatterns.length; fi++) {
+    var fp = fixedPatterns[fi];
+    if (fp.re.test(clean)) {
+      return { days: fp.days, reason: fp.label };
     }
   }
+
+  for (var ni = 0; ni < numPatterns.length; ni++) {
+    var np = numPatterns[ni];
+    var match = clean.match(np.re);
+    if (match) {
+      var num = parseInt(match[1] || match[2]);
+      if (isNaN(num) || num <= 0 || num > 365) continue;
+      var totalDays = num * np.unit;
+      var matchedText = match[0].replace(/^[，。！？\s（(]+/, '');
+      return { days: totalDays, reason: matchedText };
+    }
+  }
+
   return null;
 }
 
