@@ -2368,6 +2368,331 @@ a { color:inherit; text-decoration:none; }
   transform:scale(0.97); transition:transform 250ms ease-out;
 }
 .modal-overlay.open .book-upload-dialog { transform:scale(1); }
+/* ══════════════════════════════════════════════════════
+   医疗笔记
+   ══════════════════════════════════════════════════════ */
+#mednote-modal .modal-panel {
+  position:fixed; inset:0;
+  background:var(--bg-overlay);
+  display:flex; flex-direction:column;
+  transform:scale(0.97); opacity:0;
+  transition:transform 250ms ease-out, opacity 250ms ease-out;
+  overflow:hidden;
+}
+#mednote-modal.open .modal-panel { transform:scale(1); opacity:1; }
+
+#mednote-modal .mednote-bg {
+  position:absolute; inset:0; z-index:0;
+  pointer-events:none;
+  overflow:hidden;
+}
+#mednote-modal .mednote-bg img {
+  width:100%; height:100%; object-fit:cover;
+  display:block;
+}
+#mednote-modal .mednote-bg-blur {
+  position:absolute; inset:0; z-index:0;
+  pointer-events:none;
+  filter:blur(var(--bg-blur, 0px));
+  transform:scale(1.1);
+  display:none;
+}
+#mednote-modal .mednote-bg-blur img {
+  width:100%; height:100%; object-fit:cover;
+}
+#mednote-modal .mednote-bg-overlay {
+  position:absolute; inset:0; z-index:1;
+  pointer-events:none;
+}
+[data-theme="light"] #mednote-modal .mednote-bg-overlay {
+  background:rgba(247,244,239,0.45);
+}
+[data-theme="dark"] #mednote-modal .mednote-bg-overlay {
+  background:rgba(26,24,22,0.55);
+}
+
+.mednote-topbar {
+  position:relative; z-index:2;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 16px; height:56px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+  background:color-mix(in srgb, var(--bg-surface) 92%, transparent);
+  backdrop-filter:blur(10px);
+}
+[data-frosted="true"] .mednote-topbar {
+  background:color-mix(in srgb, var(--bg-surface) 55%, transparent) !important;
+  backdrop-filter:blur(20px) saturate(1.4) !important;
+  -webkit-backdrop-filter:blur(20px) saturate(1.4) !important;
+}
+.mednote-topbar h2 {
+  font:500 18px/1 'Noto Serif SC', serif;
+  color:var(--text-primary);
+}
+.mednote-topbar-actions { display:flex; gap:6px; }
+
+.mednote-search-wrap {
+  position:relative; z-index:2;
+  padding:10px 16px 8px;
+  flex-shrink:0;
+}
+.mednote-search-input {
+  width:100%; padding:9px 12px 9px 34px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--bg-input);
+  font-size:14px; line-height:1.6;
+  font-family:var(--font-family);
+  color:var(--text-primary);
+  transition:border-color 150ms, box-shadow 150ms;
+}
+.mednote-search-input:focus {
+  outline:none;
+  border-color:var(--pine-ring);
+  box-shadow:0 0 0 3px var(--pine-ring);
+}
+.mednote-search-input::placeholder { color:var(--text-muted); }
+.mednote-search-wrap svg {
+  position:absolute; left:26px; top:50%; transform:translateY(-50%);
+  width:16px; height:16px; stroke:var(--text-muted); stroke-width:1.5; fill:none;
+  pointer-events:none;
+}
+
+.mednote-list-area {
+  position:relative; z-index:1;
+  flex:1; overflow-y:auto;
+  padding:12px 16px 16px;
+}
+
+.mednote-empty {
+  text-align:center; color:var(--text-muted);
+  font-size:14px; padding:40px 0;
+  font-style:italic;
+}
+
+/* 笔记卡片 - 仿真书写纸 */
+.mednote-card {
+  background:#FFFEF9;
+  border:1px solid #e0ddd5;
+  border-radius:var(--radius-sm);
+  margin-bottom:12px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  overflow:hidden;
+  transition:background 150ms, box-shadow 150ms;
+  cursor:pointer;
+  position:relative;
+}
+[data-theme="dark"] .mednote-card {
+  background:#2a2820;
+  border-color:#3a3830;
+  box-shadow:0 2px 8px rgba(0,0,0,0.2);
+}
+.mednote-card:hover {
+  box-shadow:0 4px 12px rgba(0,0,0,0.10);
+}
+.mednote-card.selected {
+  outline:2px solid var(--pine);
+  outline-offset:2px;
+}
+
+.mednote-card-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px 6px;
+  border-bottom:1px solid rgba(0,0,0,0.05);
+}
+[data-theme="dark"] .mednote-card-header {
+  border-bottom-color:rgba(255,255,255,0.05);
+}
+.mednote-card-date {
+  font-size:13px; color:var(--text-secondary);
+  font-family:'Noto Serif SC', serif;
+  font-weight:500;
+}
+.mednote-card-weather {
+  font-size:12px; color:var(--text-muted);
+}
+
+.mednote-card-preview {
+  padding:8px 14px 6px;
+  font-size:13px; color:var(--text-secondary);
+  line-height:1.7;
+  max-height:68px;
+  overflow:hidden;
+  position:relative;
+}
+.mednote-card-preview.clamped::after {
+  content:'';
+  position:absolute; bottom:0; left:0; right:0; height:24px;
+  background:linear-gradient(transparent, #FFFEF9);
+  pointer-events:none;
+}
+[data-theme="dark"] .mednote-card-preview.clamped::after {
+  background:linear-gradient(transparent, #2a2820);
+}
+
+.mednote-card-sign {
+  padding:2px 14px 8px;
+  font-size:12px; color:var(--text-muted);
+  font-style:italic;
+  text-align:right;
+}
+
+.mednote-card-actions {
+  display:flex; align-items:center; justify-content:flex-end;
+  gap:4px;
+  padding:4px 10px 8px;
+  border-top:1px solid rgba(0,0,0,0.04);
+}
+[data-theme="dark"] .mednote-card-actions {
+  border-top-color:rgba(255,255,255,0.04);
+}
+
+/* 笔记展开全文 - 横线纸效果 */
+.mednote-full-overlay {
+  position:fixed; inset:0; z-index:210;
+  background:rgba(0,0,0,0.4);
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none;
+  transition:opacity 250ms ease;
+  padding:24px 16px;
+}
+.mednote-full-overlay.open { opacity:1; pointer-events:auto; }
+
+.mednote-full-paper {
+  background:#FFFEF9;
+  border-radius:var(--radius-md);
+  box-shadow:0 8px 32px rgba(0,0,0,0.15);
+  width:100%; max-width:560px;
+  max-height:80vh;
+  display:flex; flex-direction:column;
+  overflow:hidden;
+  transform:scale(0.96);
+  transition:transform 250ms ease;
+}
+.mednote-full-overlay.open .mednote-full-paper { transform:scale(1); }
+[data-theme="dark"] .mednote-full-paper {
+  background:#2a2820;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);
+}
+
+.mednote-full-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 18px 10px;
+  border-bottom:1px solid rgba(0,0,0,0.08);
+  flex-shrink:0;
+}
+[data-theme="dark"] .mednote-full-header {
+  border-bottom-color:rgba(255,255,255,0.08);
+}
+.mednote-full-date {
+  font:500 16px/1 'Noto Serif SC', serif;
+  color:var(--text-primary);
+}
+
+.mednote-full-body {
+  flex:1; overflow-y:auto;
+  padding:16px 22px 12px;
+  font-size:15px;
+  line-height:2.1;
+  color:var(--text-primary);
+  letter-spacing:0.04em;
+  word-break:break-word;
+  white-space:pre-wrap;
+  background-image:repeating-linear-gradient(
+    transparent,
+    transparent calc(2.1em - 1px),
+    rgba(180,170,155,0.25) calc(2.1em - 1px),
+    rgba(180,170,155,0.25) 2.1em
+  );
+  background-size:100% 2.1em;
+  background-position:0 16px;
+}
+[data-theme="dark"] .mednote-full-body {
+  background-image:repeating-linear-gradient(
+    transparent,
+    transparent calc(2.1em - 1px),
+    rgba(120,110,95,0.20) calc(2.1em - 1px),
+    rgba(120,110,95,0.20) 2.1em
+  );
+}
+
+.mednote-full-sign {
+  padding:8px 22px 14px;
+  font-size:14px;
+  color:var(--text-secondary);
+  font-style:italic;
+  text-align:right;
+  border-top:1px solid rgba(0,0,0,0.06);
+  flex-shrink:0;
+}
+[data-theme="dark"] .mednote-full-sign {
+  border-top-color:rgba(255,255,255,0.06);
+}
+
+/* 底部栏 */
+.mednote-bottombar {
+  position:relative; z-index:2;
+  display:flex; align-items:center; justify-content:center;
+  padding:10px 16px 14px;
+  border-top:1px solid var(--border);
+  flex-shrink:0;
+  background:color-mix(in srgb, var(--bg-surface) 92%, transparent);
+  backdrop-filter:blur(10px);
+  gap:10px;
+}
+[data-frosted="true"] .mednote-bottombar {
+  background:color-mix(in srgb, var(--bg-surface) 55%, transparent) !important;
+  backdrop-filter:blur(20px) saturate(1.4) !important;
+  -webkit-backdrop-filter:blur(20px) saturate(1.4) !important;
+}
+.mednote-gen-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:10px 24px;
+  border-radius:var(--radius-sm);
+  background:var(--pine); color:#fff;
+  font-size:14px;
+  font-family:'Noto Serif SC', serif;
+  transition:background 150ms;
+  box-shadow:var(--shadow-sm);
+}
+.mednote-gen-btn:hover { background:var(--pine-hover); }
+.mednote-gen-btn:disabled { opacity:0.5; cursor:default; }
+.mednote-gen-btn:disabled:hover { background:var(--pine); }
+.mednote-gen-btn svg {
+  width:16px; height:16px; stroke:#fff; stroke-width:1.5; fill:none;
+}
+
+/* 多选模式底栏 */
+.mednote-multibar {
+  position:relative; z-index:2;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 16px;
+  border-top:1px solid var(--border);
+  flex-shrink:0;
+  background:var(--bg-surface);
+}
+.mednote-multibar .ms-info { font-size:14px; color:var(--text-secondary); }
+
+/* 设置弹窗 */
+.mednote-settings-overlay {
+  position:fixed; inset:0; z-index:220;
+  background:rgba(0,0,0,0.35);
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none;
+  transition:opacity 250ms ease;
+}
+.mednote-settings-overlay.open { opacity:1; pointer-events:auto; }
+.mednote-settings-panel {
+  background:var(--bg-overlay);
+  border-radius:var(--radius-md);
+  padding:20px 22px;
+  max-width:380px; width:90%;
+  box-shadow:var(--shadow-md);
+  transform:scale(0.97);
+  transition:transform 250ms ease-out;
+  max-height:80vh; overflow-y:auto;
+}
+.mednote-settings-overlay.open .mednote-settings-panel { transform:scale(1); }
 </style>
 </head>
 <body>
@@ -2623,7 +2948,10 @@ a { color:inherit; text-decoration:none; }
         <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
         <span>共读书</span>
       </div>
-      <div class="func-cell empty"><span></span></div>
+      <div class="func-cell" data-func="mednote">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span>医疗笔记</span>
+      </div>
       <div class="func-cell empty"><span></span></div>
       <div class="func-cell empty"><span></span></div>
       <div class="func-cell empty"><span></span></div>
@@ -2828,7 +3156,111 @@ a { color:inherit; text-decoration:none; }
     <button class="reader-nav-btn" id="reader-next">下一页</button>
   </div>
 </div>
+<!-- 医疗笔记弹窗 -->
+<div id="mednote-modal" class="modal-overlay">
+  <div class="modal-panel">
+    <div class="mednote-bg"><img src="./Office-desk.png" alt=""></div>
+    <div class="mednote-bg-blur"><img src="./Office-desk.png" alt=""></div>
+    <div class="mednote-bg-overlay"></div>
+    <div class="mednote-topbar">
+      <h2>医疗笔记</h2>
+      <div class="mednote-topbar-actions">
+        <button class="icon-btn" id="mednote-btn-settings" title="设置">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <button class="panel-close" id="mednote-close">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="mednote-search-wrap">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="mednote-search-input" id="mednote-search" placeholder="搜索日期或关键词...">
+    </div>
+    <div class="mednote-list-area" id="mednote-list-area">
+      <div class="mednote-empty" id="mednote-empty">还没有医疗笔记</div>
+    </div>
+    <div class="mednote-bottombar" id="mednote-bottombar">
+      <button class="mednote-gen-btn" id="mednote-gen-btn">
+        <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        生成笔记
+      </button>
+    </div>
+    <div class="mednote-multibar" id="mednote-multibar" style="display:none">
+      <span class="ms-info" id="mednote-ms-count">已选 0 条</span>
+      <div class="ms-actions" style="display:flex;gap:8px">
+        <button class="btn-secondary" id="mednote-ms-cancel">取消</button>
+        <button class="btn-primary btn-danger" id="mednote-ms-del" style="background:var(--error-color)">删除选中</button>
+      </div>
+    </div>
+  </div>
+</div>
 
+<!-- 医疗笔记全文展开 -->
+<div class="mednote-full-overlay" id="mednote-full-overlay">
+  <div class="mednote-full-paper">
+    <div class="mednote-full-header">
+      <span class="mednote-full-date" id="mednote-full-date"></span>
+      <button class="panel-close" id="mednote-full-close">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="mednote-full-body" id="mednote-full-body"></div>
+    <div class="mednote-full-sign" id="mednote-full-sign"></div>
+  </div>
+</div>
+
+<!-- 医疗笔记设置 -->
+<div class="mednote-settings-overlay" id="mednote-settings-overlay">
+  <div class="mednote-settings-panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="font:500 16px/1 'Noto Serif SC',serif">笔记设置</h3>
+      <button class="panel-close" id="mednote-settings-close" style="width:28px;height:28px">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="form-group">
+      <div class="settings-row" style="border-bottom:1px solid var(--border)">
+        <span class="settings-row-label">自动生成</span>
+        <div class="toggle" id="mednote-toggle-auto"></div>
+      </div>
+      <p class="desc" style="margin-top:4px;font-size:12px;color:var(--text-muted)">开启后每隔设定轮数自动生成医疗笔记</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">每隔N轮生成</label>
+      <input class="form-input" type="number" id="mednote-auto-turns" min="5" max="100" value="15" style="width:80px">
+    </div>
+    <div class="form-group">
+          <div class="form-group">
+      <label class="form-label">笔记文风</label>
+      <select class="form-input" id="mednote-style" style="width:100%;appearance:auto;-webkit-appearance:auto;padding:8px 12px">
+        <option value="professional">专业严谨（偏学术，含诊断术语）</option>
+        <option value="warm">温和细腻（带人文关怀）</option>
+        <option value="concise">简洁扼要（要点罗列）</option>
+        <option value="custom">自定义文风</option>
+      </select>
+    </div>
+    <div class="form-group" id="mednote-custom-style-wrap" style="display:none">
+      <label class="form-label">自定义文风描述</label>
+      <textarea class="form-input" id="mednote-custom-style" placeholder="例如：以日记口吻书写，保留治疗师视角，文字带克制的温度..." style="width:100%;min-height:80px;padding:8px 12px;resize:vertical"></textarea>
+      <p class="desc" style="margin-top:4px;font-size:12px;color:var(--text-muted)">用一两句话描述你想要的文风，AI 会按描述书写</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">最少字数</label>
+      <div class="range-row">
+        <input type="range" id="mednote-min-chars" min="100" max="500" step="50" value="200">
+        <span class="range-val" id="mednote-min-chars-val">200</span>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:0">
+      <label class="form-label">最多字数</label>
+      <div class="range-row">
+        <input type="range" id="mednote-max-chars" min="200" max="1000" step="50" value="500">
+        <span class="range-val" id="mednote-max-chars-val">500</span>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- 全屏设置弹窗 -->
 <div id="settings-modal" class="modal-overlay">
   <div class="modal-panel">
@@ -2888,6 +3320,10 @@ a { color:inherit; text-decoration:none; }
                 <div class="data-stat-item">
                   <span class="data-stat-label">快捷短语</span>
                   <span class="data-stat-value" id="ds-phrases">0 条</span>
+                </div>
+                <div class="data-stat-item">
+                  <span class="data-stat-label">医疗笔记</span>
+                  <span class="data-stat-value" id="ds-mednotes">0 条</span>
                 </div>
                 <div class="data-stat-item">
                   <span class="data-stat-label">图片/缓存</span>
@@ -3440,7 +3876,7 @@ class XWADatabase {
   async open() {
     if (this._db) return;
     return new Promise((resolve, reject) => {
-      const req = indexedDB.open('xwa_db', 3);
+      const req = indexedDB.open('xwa_db', 4);
       req.onupgradeneeded = (e) => {
         const d = e.target.result;
         if (!d.objectStoreNames.contains('messages')) {
@@ -3471,6 +3907,10 @@ class XWADatabase {
         if (!d.objectStoreNames.contains('books')) {
           var bk = d.createObjectStore('books', { keyPath: 'id' });
           bk.createIndex('by_created', 'createdAt', { unique: false });
+        }
+        if (!d.objectStoreNames.contains('medical_notes')) {
+          var mn = d.createObjectStore('medical_notes', { keyPath: 'id' });
+          mn.createIndex('by_created', 'createdAt', { unique: false });
         }
         if (!d.objectStoreNames.contains('blobs')) {
           d.createObjectStore('blobs', { keyPath: 'key' });
@@ -3752,6 +4192,33 @@ class XWADatabase {
   async deleteBook(id) {
     await this._req(this._store('books', 'readwrite').delete(id));
   }
+
+  // ── 医疗笔记 ──
+  async getMedicalNotes() {
+    return new Promise((resolve, reject) => {
+      const store = this._store('medical_notes', 'readonly');
+      const idx = store.index('by_created');
+      const req = idx.getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async addMedicalNote(entry) {
+    await this._req(this._store('medical_notes', 'readwrite').put(entry));
+  }
+
+  async updateMedicalNote(id, partial) {
+    const store = this._store('medical_notes', 'readwrite');
+    const existing = await this._req(store.get(id));
+    if (!existing) return;
+    Object.assign(existing, partial);
+    await this._req(store.put(existing));
+  }
+
+  async deleteMedicalNote(id) {
+    await this._req(this._store('medical_notes', 'readwrite').delete(id));
+  }
   
   // ── 表情包 ──
   async getEmojis() {
@@ -3850,6 +4317,7 @@ class XWADatabase {
       emojis: await this.getEmojis(),
       favorites: await this.getFavorites(),
       books: await this.getBooks(),
+      medical_notes: await this.getMedicalNotes(),
       global_time: await this.getSetting('global_time') || { date: null, logs: [] },
       settings: await this.getAllSettings(),
       blobs: {}
@@ -3911,6 +4379,12 @@ data.blobs[key] = { base64: b64, mimeType: row.mimeType };
       for (const e of data.books) store.put(e);
       await this._txComplete(tx);
     }
+    if (data.medical_notes) {
+      const tx = this._tx('medical_notes', 'readwrite');
+      const store = tx.objectStore('medical_notes');
+      for (const e of data.medical_notes) store.put(e);
+      await this._txComplete(tx);
+    }
     if (data.favorites) {
       const tx = this._tx('favorites', 'readwrite');
       const store = tx.objectStore('favorites');
@@ -3946,7 +4420,7 @@ data.blobs[key] = { base64: b64, mimeType: row.mimeType };
 
   async clearAll() {
     this.revokeAll();
-    const stores = ['messages', 'memory_lt', 'memory_core', 'worldbook', 'emojis', 'favorites', 'books', 'blobs', 'kv'];
+    const stores = ['messages', 'memory_lt', 'memory_core', 'worldbook', 'emojis', 'favorites', 'books', 'medical_notes', 'blobs', 'kv'];
     for (const name of stores) {
       await this._req(this._store(name, 'readwrite').clear());
     }
@@ -3999,6 +4473,16 @@ const state = {
   books: [],
   quickPhrases: [],
   quickPhraseFolders: [],
+  medicalNotes: [],
+  medNoteSettings: {
+    autoEnabled: false,
+    autoTurns: 15,
+    style: 'professional',
+    customStylePrompt: '',
+    minChars: 200,
+    maxChars: 500,
+    _lastNoteTurn: 0
+  },
   globalTime: { date: null, logs: [] },
   readerState: {
     currentBookId: null,
@@ -5099,8 +5583,7 @@ async function regenerateStatusBar(userRequirement) {
 
   systemPrompt += '[Output Format · Iron Rules]\n';
   systemPrompt += 'Output ONLY the status bar. Do NOT output any other text, explanations, prefixes, or body text.\n';
-  systemPrompt += '[[STATUS]] must be the very first characters of your output.\n';
-  systemPrompt += 'All status bar field VALUES must be in Chinese (中文).\n\n';
+  systemPrompt += '[[STATUS]] must be the very first characters of your output.\n\n';
   systemPrompt += '[[STATUS]]\n';
   systemPrompt += '时间：[YYYY/MM/DD HH:MM] (' + timeHint + ')\n';
   systemPrompt += '地点：[broad area · specific location] (e.g., 城市名 · 咖啡馆二楼靠窗)\n';
@@ -5133,6 +5616,8 @@ async function regenerateStatusBar(userRequirement) {
   if (userRequirement && userRequirement.trim()) {
     systemPrompt += '\n[User Requirement · Highest Priority, Must Fulfill]\n' + userRequirement.trim() + '\n';
   }
+
+  systemPrompt += '\n[Language · Absolute Final Rule]\nAll status bar field VALUES must be written in Simplified Chinese (简体中文). Field names (时间/地点/天气/etc.) are already in Chinese and must stay so.\n';
 
   var userContent = 'Below is the recent conversation. Regenerate the status bar based on this:\n\n' + dialogText;
 
@@ -5663,9 +6148,15 @@ async function sendMessage() {
 
   for (var _ei = 0; _ei < emojiRefs.length; _ei++) {
     try {
-      emojiRefs[_ei].b64 = await urlToBase64(emojiRefs[_ei].url, 256);
+      var convertedB64 = await urlToBase64(emojiRefs[_ei].url, 256);
+      // 必须是 data:image/ 开头才算成功，否则保持 null 让 AI 走文字描述路径
+      if (convertedB64 && convertedB64.startsWith('data:image/')) {
+        emojiRefs[_ei].b64 = convertedB64;
+      } else {
+        emojiRefs[_ei].b64 = null;
+      }
     } catch (_) {
-      emojiRefs[_ei].b64 = emojiRefs[_ei].url;
+      emojiRefs[_ei].b64 = null;
     }
   }
 
@@ -5722,8 +6213,7 @@ Core Rules:
 - Maintain your unique tone, personality, speech habits, verbal tics, and values
 - Never speak as an AI/assistant/language model; never break the fourth wall
 - Character settings are the highest priority; you may express negative emotions and need not always be friendly
-- Advance conversation naturally; do not force or avoid reasonable conflict
-- You MUST reply in Chinese (中文). Special format tokens like [[STATUS]], [[/STATUS]], [emo:], etc. remain in their original form and are exempt from this rule.\n\n`;
+- Advance conversation naturally; do not force or avoid reasonable conflict\n\n`;
 
   // [2] Char Settings
   if (state.charMeta.description) {
@@ -5882,11 +6372,14 @@ III. Body Text
 - Do NOT add parenthetical notes, OOC content, or meta-narration
 - Body text: 100–500 characters; status bar: under 200 characters`;
 
-  // [9] Status Timeline
+    // [9] Status Timeline
   var _statusTimeline = buildStatusTimeline(3);
   if (_statusTimeline) {
     system += '\n\n' + _statusTimeline + '\n\n';
   }
+
+  // [10] 最终语言锁定（放在最后，权重最高，只出现一次）
+  system += '\n[Language · Absolute Final Rule]\nYour entire reply MUST be written in Simplified Chinese (简体中文). Only the special format tokens are exempt: [[STATUS]], [[/STATUS]], field names inside the status block (时间/地点/etc.), 「」 dialogue brackets, and [emo:name] markers. Everything else — narration, dialogue content, inner thoughts — must be in Chinese. Do not slip into English even briefly.\n';
 
   system = system.replace(/{{user}}/g, userName).replace(/{{char}}/g, charName);
 
@@ -5939,11 +6432,15 @@ function buildMessages() {
       if (hasImages || hasEmojiImages) {
         var visionParts = [];
         var cleanText = textContent.replace(/\[图片:[^\]]*\]/g, '').replace(/\[emo:[^\]]*\]/g, '').trim();
+        var visionHint = '';
         if (hasEmojiImages && !hasImages) {
-          visionParts.push({ type: 'text', text: cleanText || '(' + getUserName() + ' sent a sticker/emoji image in the chat. This is an emotional expression used in messaging, NOT a real photo. Observe the expression, gestures, and any text in the image carefully, understand the emotion or attitude being conveyed, then respond naturally as ' + getCharName() + ' to that emotion. Do NOT describe the image itself. Reply in Chinese.)' });
+          visionHint = cleanText ? cleanText + '\n（附带表情包，请理解情绪后回应。用中文回复。）'
+                                 : '（' + getUserName() + '发了一张表情包，请理解情绪后自然回应，不要描述图片本身。用中文回复。）';
         } else {
-          visionParts.push({ type: 'text', text: cleanText || '(The user sent an image. Observe its content and respond naturally. Reply in Chinese.)' });
+          visionHint = cleanText ? cleanText + '\n（附带图片，请观察后回应。用中文回复。）'
+                                 : '（附带图片，请观察内容后回应。用中文回复。）';
         }
+        visionParts.push({ type: 'text', text: visionHint });
         if (hasImages) {
           for (var imgIdx = 0; imgIdx < msg.imageRefs.length; imgIdx++) {
             var imgRef = msg.imageRefs[imgIdx];
@@ -6014,13 +6511,16 @@ function buildMessages() {
     var hasVisionContent = allImageRefs.length > 0 || pendingHasEmojiB64;
     if (hasVisionContent) {
       var contentParts = [];
-      if (combined.trim()) {
-        contentParts.push({ type: 'text', text: combined.trim() });
+      var textPrefix = combined.trim();
+      // 给图片附加简短的中文引导，避免AI跳过图片
+      if (allImageRefs.length > 0 && pendingHasEmojiB64) {
+        textPrefix = (textPrefix ? textPrefix + '\n' : '') + '（附带图片和表情包，请先观察图像内容再回应。用中文回复。）';
       } else if (allImageRefs.length > 0) {
-        contentParts.push({ type: 'text', text: '(The user sent an image. Observe its content and respond naturally. Reply in Chinese.)' });
-      } else {
-        contentParts.push({ type: 'text', text: '(' + getUserName() + ' sent a sticker/emoji image in the chat. This is an emotional expression used in messaging, NOT a real photo. Observe the expression, gestures, and any text in the image carefully, understand the emotion or attitude being conveyed, then respond naturally as ' + getCharName() + ' to that emotion. Do NOT describe the image itself. Reply in Chinese.)' });
+        textPrefix = (textPrefix ? textPrefix + '\n' : '') + '（附带图片，请先观察图像内容再回应。用中文回复。）';
+      } else if (pendingHasEmojiB64) {
+        textPrefix = (textPrefix ? textPrefix + '\n' : '') + '（' + getUserName() + '发了一张表情包，这是聊天中的情绪表达。请看清表情、动作或文字，理解情绪后自然回应，不要描述图片本身。用中文回复。）';
       }
+      contentParts.push({ type: 'text', text: textPrefix });
       for (var imgI = 0; imgI < allImageRefs.length; imgI++) {
         contentParts.push({
           type: 'image_url',
@@ -6062,9 +6562,8 @@ function buildMessages() {
     var continueHint = '[System Instruction · Continue Writing] Continue from where your last reply ended. Requirements:\n';
     continueHint += '1. Pick up exactly where you left off; do NOT repeat any previously written content\n';
     continueHint += '2. Maintain the same narrative pace, person, and tone\n';
-    continueHint += '3. You must still output a full [[STATUS]]...[[/STATUS]] block (naturally progressing from the last status)\n';
-    continueHint += '4. Continuation body: 100–400 characters\n';
-    continueHint += '5. Reply in Chinese (中文)\n';
+    continueHint += '3. You must still output a full [[STATUS]]...[[/STATUS]] block, naturally progressing from the last status\n';
+    continueHint += '4. Continuation body: between 100 and 400 Chinese characters\n';
     if (lastAssistantTail) {
       continueHint += '\nLast reply\'s ending fragment: "' + lastAssistantTail + '"\nContinue naturally from here.';
     }
@@ -6846,6 +7345,8 @@ async function checkMemoryTrigger() {
   } catch (err) {
     console.error('记忆总结失败:', err);
   }
+  // 检查医疗笔记自动触发
+  try { await checkMedNoteTrigger(); } catch (_) {}
 }
 
 async function triggerMemorySummary() {
@@ -6946,8 +7447,7 @@ async function triggerMemorySummary() {
   systemPrompt += '6. Word count: 150–250 characters\n';
   systemPrompt += '7. This is an independent new memory entry; it does not need to follow from previous memories\n';
   systemPrompt += '8. Do NOT use the template pattern "Today we..., I felt..., In the end..."\n';
-  systemPrompt += '9. Do not over-romanticize or overdramatize; maintain the character\'s appropriate sense of proportion\n';
-  systemPrompt += '10. Write in Chinese (中文)\n\n';
+  systemPrompt += '9. Do not over-romanticize or overdramatize; maintain the character\'s appropriate sense of proportion\n\n';
   systemPrompt += '[Writing Example] (reference format and length only; do NOT imitate the specific content; style must match the character\'s personality)\n';
   systemPrompt += '"2026/6/18\n\n今天下午回家，' + userName + '像往常一样打了个招呼。我没有说太多，但心里松了口气——至少今天，一切如常。"\n\n';
 
@@ -6961,12 +7461,13 @@ async function triggerMemorySummary() {
     systemPrompt += '· Boundaries ' + charName + ' set for themselves or exceptions they made\n\n';
     systemPrompt += 'If any qualify, after the summary text, leave a blank line, write "[[CORE]]", then one entry per line as a brief objective statement (15–40 characters). Do not start with "我".\n';
     systemPrompt += 'If none qualify, do NOT write the [[CORE]] marker.\n';
-    systemPrompt += 'Core memory entries must be in Chinese (中文).\n\n';
     systemPrompt += 'Core memory examples:\n';
     systemPrompt += userName + '的生日是X月X日，那天她不想被祝福\n';
     systemPrompt += charName + '第一次在治疗外的场合握住了她的手\n';
     systemPrompt += userName + '害怕冬天的雪，因为想起母亲离开那天\n';
   }
+
+  systemPrompt += '\n[Language · Absolute Final Rule]\nThe entire output (long-term memory summary and any [[CORE]] entries) MUST be written in Simplified Chinese (简体中文). The [[CORE]] marker itself stays as-is.\n';
 
   try {
     var memFormat = apiSettings.format || 'openai';
@@ -7121,7 +7622,6 @@ async function triggerMemorySummaryWithTurns(turnsToSummarize) {
   systemPrompt += '7. This is an independent new memory entry; it does not need to follow from previous memories\n';
   systemPrompt += '8. Do NOT use the template pattern "Today we..., I felt..., In the end..."\n';
   systemPrompt += '9. Do not over-romanticize or overdramatize; maintain the character\'s appropriate sense of proportion\n';
-  systemPrompt += '10. Write in Chinese (中文)\n\n';
   systemPrompt += '[Writing Example] (reference format and length only; do NOT imitate the specific content; style must match the character\'s personality)\n';
   systemPrompt += '"2026/6/18\n\n今天下午回家，' + userName + '像往常一样打了个招呼。我没有说太多，但心里松了口气——至少今天，一切如常。"\n\n';
 
@@ -7134,13 +7634,14 @@ async function triggerMemorySummaryWithTurns(turnsToSummarize) {
     systemPrompt += '· Psychological markers left by ' + userName + ' (specific fears, sources of trust, triggers for feeling safe)\n';
     systemPrompt += '· Boundaries ' + charName + ' set for themselves or exceptions they made\n\n';
     systemPrompt += 'If any qualify, after the summary text, leave a blank line, write "[[CORE]]", then one entry per line as a brief objective statement (15–40 characters). Do not start with "我".\n';
-    systemPrompt += 'If none qualify, do NOT write the [[CORE]] marker.\n';
-    systemPrompt += 'Core memory entries must be in Chinese (中文).\n\n';
-    systemPrompt += 'Core memory examples:\n';
+    systemPrompt += 'If none qualify, do NOT write the [[CORE]] marker.\n\n';
+    systemPrompt += 'Core memory examples (Chinese):\n';
     systemPrompt += userName + '的生日是X月X日，那天她不想被祝福\n';
     systemPrompt += charName + '第一次在治疗外的场合握住了她的手\n';
     systemPrompt += userName + '害怕冬天的雪，因为想起母亲离开那天\n';
   }
+
+  systemPrompt += '\n[Language · Absolute Final Rule]\nThe entire output (long-term memory summary and any [[CORE]] entries) MUST be written in Simplified Chinese (简体中文). The [[CORE]] marker itself stays as-is.\n';
 
   try {
     var memFormat = apiSettings.format || 'openai';
@@ -7896,9 +8397,9 @@ async function helpReply(msgId) {
     system += '2. Do NOT output any explanations, annotations, prefixes, suffixes, or parenthetical notes\n';
     system += '3. Do NOT output a status bar [[STATUS]]...[[/STATUS]]\n';
     system += '4. Wrap spoken words in「」; everything else is action description\n';
-    system += '5. Keep it between 30–150 characters\n';
-    system += '6. Tone and behavior must match ' + userName + '\'s persona and world settings, naturally continuing the conversation\n';
-    system += '7. Reply MUST be in Chinese (中文)\n';
+    system += '5. Keep it between 30 and 150 characters\n';
+    system += '6. Tone and behavior must match ' + userName + '\'s persona and world settings, naturally continuing the conversation\n\n';
+    system += '[Language · Absolute Final Rule]\nThe entire reply MUST be in Simplified Chinese (简体中文). The 「」 brackets stay as-is.\n';
     var nonWelcome = state.messages.filter(function(m) { return !m.isWelcome && !m.pending; });
     var recent = nonWelcome.slice(-20);
     var contextMsgs = [];
@@ -7911,7 +8412,7 @@ async function helpReply(msgId) {
         contextMsgs.push({ role: 'assistant', content: bodyText });
       }
     }
-    contextMsgs.push({ role: 'user', content: 'Now directly output ' + userName + '\'s reply with no extra content whatsoever. Reply in Chinese:' });
+    contextMsgs.push({ role: 'user', content: 'Now directly output ' + userName + '\'s reply with no extra content whatsoever:' });
     var apiFormat = state.apiSettings.format || 'openai';
     var url = getApiEndpoint(state.apiSettings.baseUrl, apiFormat, 'chat');
     var headers = getApiHeaders(state.apiSettings.apiKey, apiFormat);
@@ -10160,8 +10661,9 @@ function buildApiRequestBody(format, model, messages, opts) {
     stream: opts.stream || false
   };
   if (opts.temperature !== undefined) body.temperature = opts.temperature;
-  if (opts.frequencyPenalty !== undefined) body.frequency_penalty = opts.frequencyPenalty;
-  if (opts.presencePenalty !== undefined) body.presence_penalty = opts.presencePenalty;
+  // 仅当 penalty 非零时才传递，避免部分 Claude 系模型拒绝该参数
+  if (opts.frequencyPenalty !== undefined && opts.frequencyPenalty !== 0) body.frequency_penalty = opts.frequencyPenalty;
+  if (opts.presencePenalty !== undefined && opts.presencePenalty !== 0) body.presence_penalty = opts.presencePenalty;
   return body;
 }
 
@@ -10560,6 +11062,7 @@ async function refreshDataStats() {
     document.getElementById('ds-favorites').textContent = favs.length + ' 条';
     document.getElementById('ds-books').textContent = books.length + ' 本 (' + formatBytes(bookSize) + ')';
     document.getElementById('ds-phrases').textContent = (state.quickPhrases ? state.quickPhrases.length : 0) + ' 条';
+    document.getElementById('ds-mednotes').textContent = (state.medicalNotes ? state.medicalNotes.length : 0) + ' 条';
     document.getElementById('ds-blobs').textContent = blobCount + ' 项 (' + formatBytes(blobSize) + ')';
     document.getElementById('ds-total').textContent = formatBytes(totalSize);
 
@@ -10861,6 +11364,8 @@ async function clearAllData() {
     state.quickPhrases = [];
     state.quickPhraseFolders = [];
     state.globalTime = { date: null, logs: [] };
+    state.medicalNotes = [];
+    state.medNoteSettings = { autoEnabled: false, autoTurns: 15, style: 'professional', minChars: 200, maxChars: 500, _lastNoteTurn: 0 };
     state.readerState.currentBookId = null;
     var readerEl = document.getElementById('reader-float');
     if (readerEl) readerEl.classList.remove('open', 'zoomed');
@@ -11397,6 +11902,11 @@ setSplashProgress(75);
     if (savedFontPresets) state.fontPresets = savedFontPresets;
     if (savedPresets) state.apiPresets = savedPresets;
     try { await loadQuickPhrases(); } catch (_) {}
+    try {
+      state.medicalNotes = await db.getMedicalNotes();
+      var savedMedNoteSettings = await db.getSetting('mednote_settings');
+      if (savedMedNoteSettings) Object.assign(state.medNoteSettings, savedMedNoteSettings);
+    } catch (_) { state.medicalNotes = []; }
     try {
       await loadGlobalTime();
     } catch (_) {
@@ -12109,6 +12619,53 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(openBookshelf, 300);
   });
 
+  // 医疗笔记 - 抽屉按钮
+  document.querySelector('[data-func="mednote"]').addEventListener('click', function() {
+    closeDrawer();
+    setTimeout(openMedNoteModal, 300);
+  });
+
+  // 医疗笔记弹窗事件
+  document.getElementById('mednote-close').addEventListener('click', closeMedNoteModal);
+  document.getElementById('mednote-modal').addEventListener('click', function(e) {
+    if (e.target === document.getElementById('mednote-modal')) closeMedNoteModal();
+  });
+  document.getElementById('mednote-gen-btn').addEventListener('click', generateMedicalNote);
+  document.getElementById('mednote-btn-settings').addEventListener('click', openMedNoteSettings);
+  document.getElementById('mednote-settings-close').addEventListener('click', function() {
+    saveMedNoteSettings();
+    closeMedNoteSettings();
+  });
+  document.getElementById('mednote-settings-overlay').addEventListener('click', function(e) {
+    if (e.target === document.getElementById('mednote-settings-overlay')) {
+      saveMedNoteSettings();
+      closeMedNoteSettings();
+    }
+  });
+  document.getElementById('mednote-toggle-auto').addEventListener('click', function() {
+    this.classList.toggle('on');
+    saveMedNoteSettings();
+  });
+  document.getElementById('mednote-auto-turns').addEventListener('input', function() { saveMedNoteSettings(); });
+  document.getElementById('mednote-style').addEventListener('change', function() {     document.getElementById('mednote-custom-style-wrap').style.display = (this.value === 'custom') ? '' : 'none';     saveMedNoteSettings();   });   document.getElementById('mednote-custom-style').addEventListener('input', function() { saveMedNoteSettings(); });
+  document.getElementById('mednote-min-chars').addEventListener('input', function(e) {
+    document.getElementById('mednote-min-chars-val').textContent = e.target.value;
+    saveMedNoteSettings();
+  });
+  document.getElementById('mednote-max-chars').addEventListener('input', function(e) {
+    document.getElementById('mednote-max-chars-val').textContent = e.target.value;
+    saveMedNoteSettings();
+  });
+  document.getElementById('mednote-search').addEventListener('input', function(e) {
+    refreshMedNoteList(e.target.value.trim());
+  });
+  document.getElementById('mednote-full-close').addEventListener('click', closeMedNoteFullView);
+  document.getElementById('mednote-full-overlay').addEventListener('click', function(e) {
+    if (e.target === document.getElementById('mednote-full-overlay')) closeMedNoteFullView();
+  });
+  document.getElementById('mednote-ms-cancel').addEventListener('click', exitMedNoteMultiSelect);
+  document.getElementById('mednote-ms-del').addEventListener('click', deleteMedNoteSelected);
+
   // 书库弹窗
   document.getElementById('bookshelf-close').addEventListener('click', closeBookshelf);
   document.getElementById('bookshelf-modal').addEventListener('click', function(e) {
@@ -12308,6 +12865,474 @@ document.addEventListener('DOMContentLoaded', () => {
     db.revokeAll();
   });
 });
+// ══════════════════════════════════════════════════════
+// 医疗笔记系统
+// ══════════════════════════════════════════════════════
+var _medNoteMultiMode = false;
+var _medNoteSelectedIds = new Set();
+
+function openMedNoteModal() {
+  document.getElementById('mednote-modal').classList.add('open');
+  updateMedNoteBgBlur();
+  refreshMedNoteList();
+}
+
+function closeMedNoteModal() {
+  document.getElementById('mednote-modal').classList.remove('open');
+  exitMedNoteMultiSelect();
+}
+
+function updateMedNoteBgBlur() {
+  var blurVal = state.pageSettings.bgBlur || 0;
+  var bgEl = document.querySelector('#mednote-modal .mednote-bg');
+  var bgBlurEl = document.querySelector('#mednote-modal .mednote-bg-blur');
+  if (blurVal > 0) {
+    if (bgEl) bgEl.style.display = 'none';
+    if (bgBlurEl) {
+      bgBlurEl.style.display = '';
+      bgBlurEl.style.filter = 'blur(' + blurVal + 'px)';
+    }
+  } else {
+    if (bgEl) bgEl.style.display = '';
+    if (bgBlurEl) bgBlurEl.style.display = 'none';
+  }
+}
+
+function refreshMedNoteList(filterText) {
+  var listEl = document.getElementById('mednote-list-area');
+  var emptyEl = document.getElementById('mednote-empty');
+  var notes = (state.medicalNotes || []).slice().sort(function(a, b) {
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  });
+  if (filterText) {
+    var lower = filterText.toLowerCase();
+    notes = notes.filter(function(n) {
+      return (n.dateLabel || '').toLowerCase().indexOf(lower) !== -1 ||
+             (n.body || '').toLowerCase().indexOf(lower) !== -1 ||
+             (n.weather || '').toLowerCase().indexOf(lower) !== -1;
+    });
+  }
+  if (notes.length === 0) {
+    listEl.innerHTML = '';
+    emptyEl.style.display = '';
+    emptyEl.textContent = filterText ? '没有找到匹配的笔记' : '还没有医疗笔记';
+    listEl.appendChild(emptyEl);
+    return;
+  }
+  emptyEl.style.display = 'none';
+  var html = '';
+  for (var i = 0; i < notes.length; i++) {
+    var n = notes[i];
+    var preview = n.body || '';
+    var isClamped = preview.length > 80;
+    if (isClamped) preview = preview.slice(0, 80);
+    var selectedClass = _medNoteMultiMode && _medNoteSelectedIds.has(n.id) ? ' selected' : '';
+    html += '<div class="mednote-card' + selectedClass + '" data-mednote-id="' + n.id + '">';
+    html += '<div class="mednote-card-header">';
+    html += '<span class="mednote-card-date">' + escapeHtml(n.dateLabel || '') + '</span>';
+    if (n.weather) html += '<span class="mednote-card-weather">' + escapeHtml(n.weather) + '</span>';
+    html += '</div>';
+    html += '<div class="mednote-card-preview' + (isClamped ? ' clamped' : '') + '">' + escapeHtml(preview) + '</div>';
+    html += '<div class="mednote-card-sign">—— ' + escapeHtml(n.signName || getCharName()) + '</div>';
+    if (!_medNoteMultiMode) {
+      html += '<div class="mednote-card-actions" onclick="event.stopPropagation()">';
+      html += '<button class="btn-icon-sm" data-mednote-copy="' + n.id + '" title="复制"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
+      html += '<button class="btn-icon-sm" data-mednote-edit="' + n.id + '" title="编辑"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>';
+      html += '<button class="btn-icon-sm" data-mednote-del="' + n.id + '" title="删除"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  listEl.innerHTML = html;
+  if (emptyEl.parentNode !== listEl) listEl.appendChild(emptyEl);
+  bindMedNoteCardEvents(listEl);
+}
+
+function bindMedNoteCardEvents(listEl) {
+  var longPressTimer = null;
+  var longPressTriggered = false;
+
+  listEl.querySelectorAll('.mednote-card').forEach(function(card) {
+    card.addEventListener('click', function(e) {
+      if (longPressTriggered) { longPressTriggered = false; return; }
+      if (e.target.closest('.mednote-card-actions')) return;
+      var noteId = card.dataset.mednoteId;
+      if (_medNoteMultiMode) {
+        toggleMedNoteSelect(noteId);
+        return;
+      }
+      openMedNoteFullView(noteId);
+    });
+
+    card.addEventListener('pointerdown', function(e) {
+      if (_medNoteMultiMode) return;
+      if (e.target.closest('.mednote-card-actions')) return;
+      longPressTriggered = false;
+      longPressTimer = setTimeout(function() {
+        longPressTriggered = true;
+        enterMedNoteMultiSelect(card.dataset.mednoteId);
+      }, 500);
+    });
+    card.addEventListener('pointerup', function() { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } });
+    card.addEventListener('pointermove', function(e) { if (longPressTimer && (Math.abs(e.movementX) > 5 || Math.abs(e.movementY) > 5)) { clearTimeout(longPressTimer); longPressTimer = null; } });
+    card.addEventListener('pointercancel', function() { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } });
+    card.addEventListener('contextmenu', function(e) { if (longPressTriggered) e.preventDefault(); });
+  });
+
+  listEl.querySelectorAll('[data-mednote-copy]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var id = btn.dataset.mednoteCopy;
+      var note = state.medicalNotes.find(function(n) { return n.id === id; });
+      if (!note) return;
+      var fullText = note.dateLabel + (note.weather ? ' ' + note.weather : '') + '\n\n' + note.body + '\n\n—— ' + (note.signName || getCharName());
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(fullText).then(function() { showToast('已复制', 'success'); }).catch(function() { fallbackCopy(fullText); });
+      } else { fallbackCopy(fullText); }
+    });
+  });
+
+  listEl.querySelectorAll('[data-mednote-edit]').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var id = btn.dataset.mednoteEdit;
+      var note = state.medicalNotes.find(function(n) { return n.id === id; });
+      if (!note) return;
+      var newBody = await showPrompt('编辑医疗笔记', note.body, { multiline: true });
+      if (newBody === null) return;
+      if (!newBody.trim()) { showToast('内容不能为空', 'warning'); return; }
+      note.body = newBody.trim();
+      note.updatedAt = Date.now();
+      try { await db.updateMedicalNote(id, { body: note.body, updatedAt: note.updatedAt }); } catch (_) {}
+      refreshMedNoteList(document.getElementById('mednote-search').value.trim());
+      showToast('已更新', 'success');
+    });
+  });
+
+  listEl.querySelectorAll('[data-mednote-del]').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var id = btn.dataset.mednoteDel;
+      var confirmed = await showConfirm('确认删除此笔记？', true);
+      if (!confirmed) return;
+      try { await db.deleteMedicalNote(id); } catch (_) {}
+      state.medicalNotes = state.medicalNotes.filter(function(n) { return n.id !== id; });
+      refreshMedNoteList(document.getElementById('mednote-search').value.trim());
+      showToast('已删除', 'success');
+    });
+  });
+}
+
+function openMedNoteFullView(noteId) {
+  var note = state.medicalNotes.find(function(n) { return n.id === noteId; });
+  if (!note) return;
+  document.getElementById('mednote-full-date').textContent = note.dateLabel + (note.weather ? '  ' + note.weather : '');
+  document.getElementById('mednote-full-body').textContent = note.body;
+  document.getElementById('mednote-full-sign').textContent = '—— ' + (note.signName || getCharName());
+  document.getElementById('mednote-full-overlay').classList.add('open');
+}
+
+function closeMedNoteFullView() {
+  document.getElementById('mednote-full-overlay').classList.remove('open');
+}
+
+function enterMedNoteMultiSelect(initialId) {
+  _medNoteMultiMode = true;
+  _medNoteSelectedIds = new Set();
+  if (initialId) _medNoteSelectedIds.add(initialId);
+  document.getElementById('mednote-bottombar').style.display = 'none';
+  document.getElementById('mednote-multibar').style.display = '';
+  refreshMedNoteList(document.getElementById('mednote-search').value.trim());
+  updateMedNoteMultiCount();
+}
+
+function exitMedNoteMultiSelect() {
+  _medNoteMultiMode = false;
+  _medNoteSelectedIds = new Set();
+  document.getElementById('mednote-bottombar').style.display = '';
+  document.getElementById('mednote-multibar').style.display = 'none';
+  refreshMedNoteList(document.getElementById('mednote-search').value.trim());
+}
+
+function toggleMedNoteSelect(id) {
+  if (_medNoteSelectedIds.has(id)) _medNoteSelectedIds.delete(id);
+  else _medNoteSelectedIds.add(id);
+  updateMedNoteMultiCount();
+  refreshMedNoteList(document.getElementById('mednote-search').value.trim());
+}
+
+function updateMedNoteMultiCount() {
+  document.getElementById('mednote-ms-count').textContent = '已选 ' + _medNoteSelectedIds.size + ' 条';
+}
+
+async function deleteMedNoteSelected() {
+  if (_medNoteSelectedIds.size === 0) { showToast('未选择任何笔记', 'warning'); return; }
+  var count = _medNoteSelectedIds.size;
+  var confirmed = await showConfirm('确认删除选中的 ' + count + ' 条笔记？', true);
+  if (!confirmed) return;
+  var ids = Array.from(_medNoteSelectedIds);
+  for (var i = 0; i < ids.length; i++) {
+    try { await db.deleteMedicalNote(ids[i]); } catch (_) {}
+  }
+  state.medicalNotes = state.medicalNotes.filter(function(n) { return !_medNoteSelectedIds.has(n.id); });
+  exitMedNoteMultiSelect();
+  showToast('已删除 ' + count + ' 条笔记', 'success');
+}
+
+// ── 医疗笔记设置 ──
+function openMedNoteSettings() {
+  var s = state.medNoteSettings;
+  document.getElementById('mednote-toggle-auto').classList.toggle('on', !!s.autoEnabled);
+  document.getElementById('mednote-auto-turns').value = s.autoTurns || 15;
+  document.getElementById('mednote-style').value = s.style || 'professional';
+  document.getElementById('mednote-custom-style').value = s.customStylePrompt || '';
+  document.getElementById('mednote-custom-style-wrap').style.display = (s.style === 'custom') ? '' : 'none';
+  document.getElementById('mednote-min-chars').value = s.minChars || 200;
+  document.getElementById('mednote-min-chars-val').textContent = s.minChars || 200;
+  document.getElementById('mednote-max-chars').value = s.maxChars || 500;
+  document.getElementById('mednote-max-chars-val').textContent = s.maxChars || 500;
+  document.getElementById('mednote-settings-overlay').classList.add('open');
+}
+
+function closeMedNoteSettings() {
+  document.getElementById('mednote-settings-overlay').classList.remove('open');
+}
+
+async function saveMedNoteSettings() {
+  state.medNoteSettings.autoEnabled = document.getElementById('mednote-toggle-auto').classList.contains('on');
+  state.medNoteSettings.autoTurns = parseInt(document.getElementById('mednote-auto-turns').value) || 15;
+  state.medNoteSettings.style = document.getElementById('mednote-style').value;
+  state.medNoteSettings.customStylePrompt = document.getElementById('mednote-custom-style').value.trim();
+  document.getElementById('mednote-custom-style-wrap').style.display = (state.medNoteSettings.style === 'custom') ? '' : 'none';
+  // 边界保护：最小不超过最大
+  if (state.medNoteSettings.minChars >= state.medNoteSettings.maxChars) {
+    state.medNoteSettings.minChars = Math.max(50, state.medNoteSettings.maxChars - 50);
+    document.getElementById('mednote-min-chars').value = state.medNoteSettings.minChars;
+    document.getElementById('mednote-min-chars-val').textContent = state.medNoteSettings.minChars;
+  }
+  try { await db.setSetting('mednote_settings', state.medNoteSettings); } catch (_) {}
+}
+
+// ── AI 生成医疗笔记 ──
+async function generateMedicalNote() {
+  if (!state.apiSettings.apiKey) { showToast('请先在设置中填写 API 密钥', 'warning'); return; }
+  var btn = document.getElementById('mednote-gen-btn');
+  var origHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#fff;stroke-width:2;fill:none;animation:spin 0.8s linear infinite"><circle cx="12" cy="12" r="10" stroke-dasharray="30 70"/></svg> 生成中...';
+
+  try {
+    var charName = getCharName();
+    var userName = getUserName();
+    var s = state.medNoteSettings;
+    var styleDesc = '';
+    if (s.style === 'professional') {
+      styleDesc = 'Adopt a rigorously professional clinical tone consistent with formal psychiatric documentation. Use precise DSM-5 or ICD-11 terminology where appropriate (e.g., affect, ideation, MSE findings). Structure observations into: chief complaint, mental status examination, clinical impression, and treatment plan. Avoid colloquialisms. Maintain emotional neutrality.';
+    } else if (s.style === 'warm') {
+      styleDesc = 'Adopt a humanistic clinical voice that integrates professional rigor with authentic therapeutic warmth. Document clinical observations accurately while acknowledging the person behind the symptoms. Use measured language that conveys care without sacrificing diagnostic clarity. Reflect the therapist\'s own restrained inner observations.';
+    } else if (s.style === 'concise') {
+      styleDesc = 'Adopt a structured, point-form clinical style. Organize content under brief section headers: 主诉 / 观察 / 评估 / 计划. Prioritize specificity and brevity. Each bullet should convey one discrete clinical fact or judgment. Avoid narrative prose.';
+    } else if (s.style === 'custom' && s.customStylePrompt) {
+      styleDesc = 'Adopt the following user-defined writing style strictly: ' + s.customStylePrompt + '\nWhile honoring this style, you must still preserve the structural integrity of a clinical note (observation, assessment, plan).';
+    } else {
+      // custom 但用户没填，回落到 professional
+      styleDesc = 'Adopt a rigorously professional clinical tone consistent with formal psychiatric documentation. Use precise terminology and structured observations.';
+    }
+
+    var dateStr = getGlobalDateFormatted();
+    var weatherStr = '';
+    if (state.lastStatus && state.lastStatus['天气']) weatherStr = state.lastStatus['天气'];
+
+    var timeStr = dateStr;
+    if (state.lastStatus && state.lastStatus['时间']) {
+      var hhmmMatch = state.lastStatus['时间'].match(/(\d{1,2}:\d{2})/);
+      if (hhmmMatch) timeStr = dateStr + ' ' + hhmmMatch[1];
+    }
+
+    var system = '';
+    system += 'You are ' + charName + ', a licensed clinical psychologist / psychiatrist.\n';
+    system += 'Your task: write a formal medical/clinical note based on your recent sessions with patient ' + userName + '.\n\n';
+
+    if (state.charMeta.description) {
+      system += '[Your Professional Background & Character]\n' + state.charMeta.description + '\n\n';
+    }
+    if (state.userMeta.description) {
+      system += '[Patient Information: ' + userName + ']\n' + state.userMeta.description + '\n\n';
+    }
+
+    var enabledWB = state.worldBook.filter(function(e) { return e.enabled; });
+    if (enabledWB.length > 0) {
+      system += '[Clinical Context / World Settings]\n' + enabledWB.map(function(e) { return e.content; }).join('\n\n') + '\n\n';
+    }
+
+    if (state.coreMemory.length > 0) {
+      system += '[Core Clinical Memory]\n' + state.coreMemory.slice(0, 15).map(function(e) { return '- ' + e.content; }).join('\n') + '\n\n';
+    }
+    if (state.longTermMemory.length > 0) {
+      system += '[Long-term Session History]\n' + state.longTermMemory.slice(-10).map(function(e) { return '- ' + e.summary; }).join('\n') + '\n\n';
+    }
+
+    // 注入短期记忆（最近若干轮对话的浓缩）
+    var shortTermBlock = '';
+    var nonWelcomeForShort = state.messages.filter(function(m) { return !m.isWelcome && !m.pending; });
+    var shortTurnsForNote = Math.min(state.memorySettings.shortTermTurns || 10, 15);
+    var recentForShort = nonWelcomeForShort.slice(-shortTurnsForNote * 2);
+    if (recentForShort.length > 0) {
+      shortTermBlock += '[Short-term Memory · Most Recent Exchange Context]\n';
+      shortTermBlock += 'These are the most recent turns leading up to this note. Use them to anchor your clinical reasoning:\n';
+      for (var stI = 0; stI < recentForShort.length; stI++) {
+        var stM = recentForShort[stI];
+        if (stM.role === 'user') {
+          var stText = (stM.userText || stM.rawText || '').replace(/\[emo:[^\]]+\]/g, '').replace(/\[图片:[^\]]*\]/g, '').trim();
+          if (stText) shortTermBlock += userName + ': ' + stText.slice(0, 200) + '\n';
+        } else {
+          var stBody = (stM.rawText || '').replace(/\[\[STATUS\]\][\s\S]*?\[\[\/STATUS\]\]/, '').trim();
+          if (stBody) shortTermBlock += charName + ': ' + stBody.slice(0, 200) + '\n';
+        }
+      }
+      shortTermBlock += '\n';
+      system += shortTermBlock;
+    }
+
+    system += '[Writing Style]\n' + styleDesc + '\n\n';
+    system += '[Output Format · Iron Rules]\n';
+    system += '1. The very first line must be: ' + dateStr + (weatherStr ? ' ' + weatherStr : '') + '\n';
+    system += '2. Then a blank line, then the clinical note body\n';
+    system += '3. The body should cover: presenting concerns, clinical observations (affect, behavior, cognition), therapeutic interventions used, patient response, risk assessment if applicable, and treatment plan / next steps\n';
+    system += '4. Word count: between ' + s.minChars + ' and ' + s.maxChars + ' Chinese characters\n';
+    system += '5. The very last line must be exactly the signature: ' + charName + '\n';
+    system += '6. Do NOT output anything else — no [[STATUS]] block, no 「」 dialogue markers, no meta commentary, no markdown headers unless the style demands it\n';
+    system += '7. Use first-person "我" as ' + charName + '\n';
+    system += '8. Address the patient as "来访者" or "' + userName + '" — never use "你"\n';
+    system += '9. Session time reference: ' + timeStr + '\n';
+    system += '10. The note must read as a private clinical record, not a reply to anyone\n\n';
+    system += '[Language · Absolute Final Rule]\nThe entire output, including the date line and signature, MUST be written in Simplified Chinese (简体中文). This rule overrides any other language preference. Do not mix English into the body except for unavoidable clinical abbreviations like DSM-5.\n';
+
+    var nonWelcome = state.messages.filter(function(m) { return !m.isWelcome && !m.pending; });
+    var recent = nonWelcome.slice(-40);
+    var dialogText = '';
+    for (var i = 0; i < recent.length; i++) {
+      var m = recent[i];
+      if (m.role === 'user') {
+        var txt = (m.userText || m.rawText || '').replace(/\[emo:[^\]]+\]/g, '').replace(/\[图片:[^\]]*\]/g, '').trim();
+        if (txt) dialogText += userName + '：' + txt + '\n';
+      } else {
+        var body = (m.rawText || '').replace(/\[\[STATUS\]\][\s\S]*?\[\[\/STATUS\]\]/, '').trim();
+        if (body) dialogText += charName + '：' + body.slice(0, 300) + '\n';
+      }
+    }
+
+    var apiFormat = state.apiSettings.format || 'openai';
+    var url = getApiEndpoint(state.apiSettings.baseUrl, apiFormat, 'chat');
+    var headers = getApiHeaders(state.apiSettings.apiKey, apiFormat);
+    var msgs = [
+      { role: 'system', content: system },
+      { role: 'user', content: 'Based on the following recent session records, write the clinical note now:\n\n' + dialogText }
+    ];
+    var bodyData = buildApiRequestBody(apiFormat, state.apiSettings.model, msgs, {
+      maxTokens: 1200, temperature: 0.4, stream: false
+    });
+
+    var response = await fetch(url, { method: 'POST', headers: headers, body: JSON.stringify(bodyData) });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    var data = await response.json();
+    var content = '';
+    if (data.choices && data.choices[0] && data.choices[0].message) content = data.choices[0].message.content || '';
+    else if (data.content && Array.isArray(data.content) && data.content[0]) content = data.content[0].text || '';
+    if (!content.trim()) throw new Error('AI 未返回内容');
+    content = stripThinkTags(content).trim();
+
+    var lines = content.split('\n');
+    var noteDateLabel = lines[0] ? lines[0].trim() : dateStr;
+    var noteWeather = '';
+    var dateLabelMatch = noteDateLabel.match(/^(\d{4}\/\d{1,2}\/\d{1,2})\s*(.*)/);
+    if (dateLabelMatch) {
+      noteDateLabel = dateLabelMatch[1];
+      noteWeather = (dateLabelMatch[2] || '').trim();
+    }
+
+    var noteSignName = charName;
+    var bodyLines = lines.slice(1);
+    if (bodyLines.length > 0) {
+      var lastLine = bodyLines[bodyLines.length - 1].trim();
+      // 修正：括号优先级问题，原逻辑导致非签名行被误删
+      var isSignatureLine = (lastLine === charName) ||
+                            (lastLine === '——' + charName) ||
+                            (lastLine === '—— ' + charName) ||
+                            (lastLine.indexOf('——') === 0 && lastLine.indexOf(charName) !== -1 && lastLine.length < charName.length + 10) ||
+                            (lastLine.indexOf(charName) !== -1 && lastLine.length < charName.length + 6);
+      if (isSignatureLine) {
+        bodyLines.pop();
+      }
+      // 顺便剥掉末尾的空行
+      while (bodyLines.length > 0 && !bodyLines[bodyLines.length - 1].trim()) {
+        bodyLines.pop();
+      }
+    }
+    var noteBody = bodyLines.join('\n').trim();
+    if (!noteBody) noteBody = content;
+
+    var noteEntry = {
+      id: genId('mednote'),
+      dateLabel: noteDateLabel,
+      weather: noteWeather || weatherStr,
+      body: noteBody,
+      signName: noteSignName,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+
+    var editedBody = await showPrompt('医疗笔记预览', noteBody, {
+      multiline: true,
+      description: '以下是 AI 生成的医疗笔记，你可以直接编辑修改后确认写入。'
+    });
+    if (editedBody === null) {
+      showToast('已取消', 'warning');
+      return;
+    }
+    if (!editedBody.trim()) { showToast('内容为空，已取消', 'warning'); return; }
+    noteEntry.body = editedBody.trim();
+
+    state.medicalNotes.push(noteEntry);
+    try { await db.addMedicalNote(noteEntry); } catch (_) {}
+    refreshMedNoteList();
+    showToast('医疗笔记已生成', 'success');
+
+  } catch (err) {
+    showToast('生成失败: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origHTML;
+  }
+}
+
+// ── 自动触发医疗笔记 ──
+async function checkMedNoteTrigger() {
+  if (!state.medNoteSettings.autoEnabled) return;
+  var triggerTurns = state.medNoteSettings.autoTurns || 15;
+  var totalAssistant = 0;
+  try {
+    var allMsgs = await db.getAllMessages();
+    for (var i = 0; i < allMsgs.length; i++) {
+      if (!allMsgs[i].isWelcome && !allMsgs[i].pending && allMsgs[i].role === 'assistant') totalAssistant++;
+    }
+  } catch (_) {
+    totalAssistant = state.messages.filter(function(m) { return !m.isWelcome && !m.pending && m.role === 'assistant'; }).length;
+  }
+  var lastNoteTurn = state.medNoteSettings._lastNoteTurn || 0;
+  var sinceLast = totalAssistant - lastNoteTurn;
+    if (sinceLast < triggerTurns) return;
+  // 防止自动生成期间重复触发
+  if (state.medNoteSettings._autoGenerating) return;
+  state.medNoteSettings._autoGenerating = true;
+  showToast('正在自动生成医疗笔记...', 'warning', 5000);
+  try {
+    await generateMedicalNote();
+    state.medNoteSettings._lastNoteTurn = totalAssistant;
+    await db.setSetting('mednote_settings', state.medNoteSettings);
+  } catch (err) {
+    console.error('自动生成医疗笔记失败:', err);
+  } finally {
+    state.medNoteSettings._autoGenerating = false;
+  }
+}
 // ══════════════════════════════════════════════════════
 // 快捷短语系统
 // ══════════════════════════════════════════════════════
