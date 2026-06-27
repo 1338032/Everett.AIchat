@@ -6692,6 +6692,33 @@ async function receiveReply() {
       stream: useStream
     });
 
+        // 调试：打印实际请求信息
+    console.log('=== API Request Debug ===');
+    console.log('URL:', url);
+    console.log('Format:', apiFormat);
+    console.log('Headers:', JSON.stringify(headers, null, 2));
+    console.log('Body messages count:', (body.messages || []).length);
+    console.log('Body model:', body.model);
+    console.log('Body keys:', Object.keys(body));
+    if (body.messages && body.messages.length > 0) {
+      var lastMsg = body.messages[body.messages.length - 1];
+      console.log('Last message role:', lastMsg.role);
+      console.log('Last message content type:', typeof lastMsg.content);
+      if (typeof lastMsg.content === 'string') {
+        console.log('Last message content (first 200):', lastMsg.content.slice(0, 200));
+      } else if (Array.isArray(lastMsg.content)) {
+        console.log('Last message content parts:', lastMsg.content.length, lastMsg.content.map(function(p) { return p.type; }));
+      }
+      // 检查连续同role
+      for (var _di = 1; _di < body.messages.length; _di++) {
+        if (body.messages[_di].role === body.messages[_di-1].role) {
+          console.warn('连续同role消息! index:', _di, 'role:', body.messages[_di].role);
+        }
+      }
+    }
+    console.log('Full body (first 2000):', JSON.stringify(body).slice(0, 2000));
+    console.log('=== End Debug ===');
+
     const response = await fetch(url, {
       method: 'POST',
       headers: headers,
@@ -6701,6 +6728,7 @@ async function receiveReply() {
 
     if (!response.ok) {
       const errText = await response.text().catch(() => '');
+      console.error('API Error:', response.status, errText.slice(0, 500));
       let errMsg = '请求失败';
       if (response.status === 401) errMsg = '❌ API 密钥无效或已过期，请到设置中检查密钥是否正确';
       else if (response.status === 403) errMsg = '🚫 没有权限访问该模型，请确认 API 密钥的权限范围';
@@ -13105,6 +13133,8 @@ async function saveMedNoteSettings() {
   state.medNoteSettings.style = document.getElementById('mednote-style').value;
   state.medNoteSettings.customStylePrompt = document.getElementById('mednote-custom-style').value.trim();
   document.getElementById('mednote-custom-style-wrap').style.display = (state.medNoteSettings.style === 'custom') ? '' : 'none';
+  state.medNoteSettings.minChars = parseInt(document.getElementById('mednote-min-chars').value) || 200;
+  state.medNoteSettings.maxChars = parseInt(document.getElementById('mednote-max-chars').value) || 500;
   // 边界保护：最小不超过最大
   if (state.medNoteSettings.minChars >= state.medNoteSettings.maxChars) {
     state.medNoteSettings.minChars = Math.max(50, state.medNoteSettings.maxChars - 50);
